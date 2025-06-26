@@ -136,14 +136,16 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
   const [issues, setIssues] = useState<Issue[]>(mockIssues);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterSeverity, setFilterSeverity] = useState<string>("all");
+  const [filterProject, setFilterProject] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredIssues = issues.filter(issue => {
     const matchesStatus = filterStatus === "all" || issue.status === filterStatus;
     const matchesSeverity = filterSeverity === "all" || issue.severity === filterSeverity;
+    const matchesProject = filterProject === "all" || issue.projectId.toString() === filterProject;
     const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          issue.projectName.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSeverity && matchesSearch;
+    return matchesStatus && matchesSeverity && matchesProject && matchesSearch;
   });
 
   // Issue statistics
@@ -316,6 +318,20 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
                 className="pl-10"
               />
             </div>
+            
+            <Select value={filterProject} onValueChange={setFilterProject}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Filter by project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map(project => (
+                  <SelectItem key={project.id} value={project.id.toString()}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-full sm:w-[180px]">

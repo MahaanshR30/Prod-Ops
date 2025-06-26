@@ -16,7 +16,7 @@ const projects = [
   {
     id: 1,
     name: "Mobile App Redesign",
-    status: "green",
+    status: "green" as const,
     progress: 85,
     dueDate: "2024-07-15",
     department: "Product",
@@ -31,7 +31,7 @@ const projects = [
   {
     id: 2,
     name: "API Integration Platform",
-    status: "amber",
+    status: "amber" as const,
     progress: 70,
     dueDate: "2024-07-10",
     department: "Engineering",
@@ -46,7 +46,7 @@ const projects = [
   {
     id: 3,
     name: "Customer Analytics Dashboard",
-    status: "red",
+    status: "red" as const,
     progress: 45,
     dueDate: "2024-06-30",
     department: "Data",
@@ -61,7 +61,7 @@ const projects = [
   {
     id: 4,
     name: "Security Compliance Update",
-    status: "green",
+    status: "green" as const,
     progress: 90,
     dueDate: "2024-07-20",
     department: "Security",
@@ -76,7 +76,7 @@ const projects = [
   {
     id: 5,
     name: "Marketing Automation Tool",
-    status: "amber",
+    status: "amber" as const,
     progress: 65,
     dueDate: "2024-07-12",
     department: "Marketing",
