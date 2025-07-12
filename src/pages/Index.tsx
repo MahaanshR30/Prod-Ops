@@ -250,7 +250,6 @@ const statusLabels = {
 const Index = () => {
   const [filters, setFilters] = useState({ status: 'all', type: 'all', assignee: '', department: 'all' });
   const [projectsData, setProjectsData] = useState(projects);
-  const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
 
@@ -395,12 +394,10 @@ const Index = () => {
                     Track and manage all your active projects and products
                   </p>
                 </div>
-                {selectedProject && (
-                  <TaskFilters 
-                    filters={filters}
-                    onFiltersChange={setFilters}
-                  />
-                )}
+                <TaskFilters 
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                />
               </div>
               
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -409,8 +406,6 @@ const Index = () => {
                     key={project.id} 
                     project={project} 
                     onStatusUpdate={handleStatusUpdate}
-                    onClick={() => setSelectedProject(project.id)}
-                    isSelected={selectedProject === project.id}
                   />
                 ))}
               </div>
