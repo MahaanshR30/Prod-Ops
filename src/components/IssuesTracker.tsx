@@ -32,7 +32,7 @@ interface Issue {
   title: string;
   description: string;
   severity: "low" | "medium" | "high" | "critical";
-  status: "open" | "in-progress" | "resolved";
+  status: "unresolved" | "resolved";
   assignee: string;
   dateCreated: string;
   dateResolved?: string;
@@ -55,7 +55,7 @@ const mockIssues: Issue[] = [
     description: "Intermittent connection timeouts causing API failures during peak hours",
     elaborateDescription: "We are experiencing intermittent database connection timeouts specifically during peak traffic hours (9 AM - 11 AM and 2 PM - 4 PM). This is causing cascading failures in our API endpoints, resulting in 504 Gateway Timeout errors for approximately 15% of requests during these periods. The issue appears to be related to connection pool exhaustion and may require optimization of our database connection management strategy. We have identified that the current connection pool size of 20 may be insufficient for our current load patterns. Additionally, some long-running queries are not being properly terminated, leading to connection leaks.",
     severity: "high",
-    status: "open",
+    status: "unresolved",
     assignee: "Michael Chen",
     dateCreated: "2024-06-25",
     department: "Engineering",
@@ -69,7 +69,7 @@ const mockIssues: Issue[] = [
     description: "External service rate limits blocking batch operations",
     elaborateDescription: "Our integration with the third-party payment processing API is being throttled due to rate limiting. The external service allows only 100 requests per minute, but our batch processing jobs require up to 500 requests during peak operations. This is causing significant delays in payment processing and order fulfillment. We need to implement a queue-based system with exponential backoff to respect the rate limits while maintaining system performance. The current implementation does not handle rate limit responses gracefully and simply fails the entire batch operation.",
     severity: "medium",
-    status: "in-progress",
+    status: "unresolved",
     assignee: "Sarah Johnson",
     dateCreated: "2024-06-24",
     department: "Engineering",
@@ -83,7 +83,7 @@ const mockIssues: Issue[] = [
     description: "ETL process failing due to schema changes in source system",
     elaborateDescription: "The data pipeline responsible for customer analytics has been failing since the upstream CRM system updated their database schema on June 20th. The new schema includes additional fields and has changed the data types for several existing columns, breaking our ETL mappings. This is preventing the analytics dashboard from receiving updated customer data, making the reports stale and unreliable. We need to update our data transformation logic to accommodate the new schema and implement better schema validation to prevent future failures. The issue affects all customer segmentation reports and revenue analytics.",
     severity: "critical",
-    status: "open",
+    status: "unresolved",
     assignee: "Emily Rodriguez",
     dateCreated: "2024-06-23",
     department: "Data",
@@ -97,7 +97,7 @@ const mockIssues: Issue[] = [
     description: "Dashboard loading times exceed 30 seconds for enterprise customers",
     elaborateDescription: "Enterprise customers with large datasets (>1M records) are experiencing unacceptable dashboard loading times of 30-45 seconds. The current implementation loads all data client-side and performs filtering and aggregation in the browser, which is not scalable. We need to implement server-side pagination, pre-computed aggregations, and data virtualization to improve performance. The issue is particularly severe for customers in the retail and e-commerce sectors who have high transaction volumes. This is impacting customer satisfaction and retention rates.",
     severity: "high",
-    status: "open",
+    status: "unresolved",
     assignee: "David Park",
     dateCreated: "2024-06-22",
     department: "Data",
@@ -111,7 +111,7 @@ const mockIssues: Issue[] = [
     description: "Role-based access control not implemented for sensitive data",
     elaborateDescription: "The customer analytics dashboard currently lacks proper role-based access control, allowing all users to view sensitive customer data regardless of their authorization level. This poses a significant security and compliance risk, especially for handling PII and financial data. We need to implement a comprehensive permissions system that restricts access to sensitive data based on user roles and departments. The system should support granular permissions at the field level and maintain audit logs for compliance purposes. This is blocking our SOC 2 certification process.",
     severity: "medium",
-    status: "in-progress",
+    status: "resolved",
     assignee: "Emily Rodriguez",
     dateCreated: "2024-06-21",
     department: "Data",
@@ -125,7 +125,7 @@ const mockIssues: Issue[] = [
     description: "Templates not displaying correctly in certain email clients",
     elaborateDescription: "Email templates generated by our marketing automation tool are not rendering correctly in Outlook 2016/2019 and some versions of Apple Mail. The issue is caused by CSS compatibility problems and the use of modern HTML features that are not supported by older email clients. Approximately 30% of our recipients use these problematic clients, resulting in broken layouts and poor user experience. We need to refactor the email templates to use more conservative HTML/CSS that is compatible with legacy email clients while maintaining visual appeal. This issue is affecting campaign effectiveness and brand perception.",
     severity: "medium",
-    status: "open",
+    status: "resolved",
     assignee: "Jessica Wu",
     dateCreated: "2024-06-20",
     department: "Marketing",
@@ -141,8 +141,7 @@ const severityConfig = {
 };
 
 const statusConfig = {
-  open: { color: "bg-red-500", label: "Open", textColor: "text-red-700" },
-  "in-progress": { color: "bg-amber-500", label: "In Progress", textColor: "text-amber-700" },
+  unresolved: { color: "bg-red-500", label: "Unresolved", textColor: "text-red-700" },
   resolved: { color: "bg-green-500", label: "Resolved", textColor: "text-green-700" }
 };
 
@@ -167,8 +166,7 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
   // Issue statistics
   const issueStats = {
     total: issues.length,
-    open: issues.filter(i => i.status === "open").length,
-    inProgress: issues.filter(i => i.status === "in-progress").length,
+    unresolved: issues.filter(i => i.status === "unresolved").length,
     resolved: issues.filter(i => i.status === "resolved").length,
     critical: issues.filter(i => i.severity === "critical").length,
     high: issues.filter(i => i.severity === "high").length
@@ -177,10 +175,10 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
   // Department issue breakdown
   const departmentIssues = issues.reduce((acc, issue) => {
     if (!acc[issue.department]) {
-      acc[issue.department] = { total: 0, open: 0, critical: 0 };
+      acc[issue.department] = { total: 0, unresolved: 0, critical: 0 };
     }
     acc[issue.department].total += 1;
-    if (issue.status === "open") acc[issue.department].open += 1;
+    if (issue.status === "unresolved") acc[issue.department].unresolved += 1;
     if (issue.severity === "critical") acc[issue.department].critical += 1;
     return acc;
   }, {} as Record<string, any>);
@@ -190,6 +188,17 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
     setIsDetailSidebarOpen(true);
   };
 
+  const handleStatusUpdate = (issueId: number, newStatus: "unresolved" | "resolved", e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the issue click
+    setIssues(prevIssues => 
+      prevIssues.map(issue => 
+        issue.id === issueId 
+          ? { ...issue, status: newStatus, dateResolved: newStatus === "resolved" ? new Date().toISOString() : undefined }
+          : issue
+      )
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Issues Summary */}
@@ -197,28 +206,15 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
         <Card className="border-l-4 border-l-red-500">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-600">Open Issues</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-600">Unresolved Issues</CardTitle>
               <AlertTriangle className="w-4 h-4 text-red-500" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{issueStats.open}</div>
+            <div className="text-2xl font-bold text-slate-900">{issueStats.unresolved}</div>
             <p className="text-xs text-slate-600 mt-1">
               {issueStats.critical} critical, {issueStats.high} high priority
             </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-amber-500">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-600">In Progress</CardTitle>
-              <Clock className="w-4 h-4 text-amber-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{issueStats.inProgress}</div>
-            <p className="text-xs text-slate-600 mt-1">Being actively worked on</p>
           </CardContent>
         </Card>
 
@@ -266,8 +262,8 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
                 </div>
                 <div className="text-sm text-slate-600 space-y-1">
                   <div className="flex justify-between">
-                    <span>Open:</span>
-                    <span className="font-medium text-red-600">{stats.open}</span>
+                    <span>Unresolved:</span>
+                    <span className="font-medium text-red-600">{stats.unresolved}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Critical:</span>
@@ -360,8 +356,7 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="unresolved">Unresolved</SelectItem>
                 <SelectItem value="resolved">Resolved</SelectItem>
               </SelectContent>
             </Select>
@@ -409,7 +404,8 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
                           </Badge>
                           <Badge 
                             variant="outline"
-                            className={`text-xs ${statusStyle.textColor}`}
+                            className={`text-xs ${statusStyle.textColor} cursor-pointer hover:bg-slate-100 transition-colors`}
+                            onClick={(e) => handleStatusUpdate(issue.id, issue.status === "unresolved" ? "resolved" : "unresolved", e)}
                           >
                             {statusStyle.label}
                           </Badge>
