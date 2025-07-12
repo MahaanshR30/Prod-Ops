@@ -250,6 +250,17 @@ const ProjectDetail: React.FC = () => {
       pastWeeksStatus: [...project.pastWeeksStatus, weekStatus]
     } as any);
   };
+
+  const handleWeeklyStatusUpdate = (week: string, newStatus: 'red' | 'amber' | 'green' | 'not-started') => {
+    if (!project) return;
+    const updatedWeeklyStatus = project.pastWeeksStatus.map(weekData => 
+      weekData.week === week ? { ...weekData, status: newStatus } : weekData
+    );
+    setCurrentProject({
+      ...project,
+      pastWeeksStatus: updatedWeeklyStatus
+    } as any);
+  };
   
   if (!project) {
     return (
@@ -313,6 +324,7 @@ const ProjectDetail: React.FC = () => {
           project={project} 
           onStatusUpdate={handleStatusUpdate}
           onWeeklyStatusAdd={handleWeeklyStatusAdd}
+          onWeeklyStatusUpdate={handleWeeklyStatusUpdate}
         />
         </div>
 

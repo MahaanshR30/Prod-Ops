@@ -19,6 +19,7 @@ interface ProjectHeaderProps {
   project: Project;
   onStatusUpdate?: (statusType: 'pmStatus' | 'opsStatus', newStatus: string) => void;
   onWeeklyStatusAdd?: (weekStatus: { week: string; status: 'red' | 'amber' | 'green' | 'not-started' }) => void;
+  onWeeklyStatusUpdate?: (week: string, newStatus: 'red' | 'amber' | 'green' | 'not-started') => void;
 }
 
 const statusConfig = {
@@ -66,7 +67,7 @@ const trendConfig = {
   }
 };
 
-export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project, onStatusUpdate, onWeeklyStatusAdd }) => {
+export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project, onStatusUpdate, onWeeklyStatusAdd, onWeeklyStatusUpdate }) => {
   const [newWeekStatus, setNewWeekStatus] = useState<'red' | 'amber' | 'green' | 'not-started'>('green');
   const pmConfig = statusConfig[project.pmStatus];
   const opsConfig = statusConfig[project.opsStatus];
@@ -189,7 +190,7 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project, onStatusU
                         const statusCycle: ('green' | 'amber' | 'red' | 'not-started')[] = ['green', 'amber', 'red', 'not-started'];
                         const currentIndex = statusCycle.indexOf(weekData.status);
                         const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
-                        onStatusUpdate?.('pmStatus', nextStatus); // Reusing the callback for weekly status
+                        onWeeklyStatusUpdate?.(weekData.week, nextStatus);
                       }}
                     ></div>
                   ) : (
