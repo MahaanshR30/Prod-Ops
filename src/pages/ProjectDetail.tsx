@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Calendar, User, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Calendar, User, Clock, Plus, CalendarIcon } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 // Mock data - in a real app, this would come from an API
 const mockProjects = [
@@ -175,8 +185,27 @@ const trendConfig = {
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const form = useForm({
+    defaultValues: {
+      task: "",
+      description: "",
+      type: "",
+      assignee: "",
+      dueDate: undefined as Date | undefined,
+      comments: ""
+    }
+  });
   
   const project = mockProjects.find(p => p.id === parseInt(id || '0'));
+
+  const onSubmit = (data: any) => {
+    console.log("New task:", data);
+    // Here you would normally add the task to the project's deliverables
+    setIsDialogOpen(false);
+    form.reset();
+  };
   
   if (!project) {
     return (
@@ -276,6 +305,152 @@ const ProjectDetail: React.FC = () => {
               <Badge variant="outline" className="ml-auto">
                 {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </Badge>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="ml-2">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Task
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Task</DialogTitle>
+                  </DialogHeader>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="task"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Task</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter task name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Brief Description of task</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Enter task description" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select task type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="feature-request">Feature Request</SelectItem>
+                                <SelectItem value="new-feature">New Feature</SelectItem>
+                                <SelectItem value="adhoc">Adhoc</SelectItem>
+                                <SelectItem value="bug">Bug</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="assignee"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Assignee</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter assignee name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="dueDate"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Due Date</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {field.value ? (
+                                      format(field.value, "PPP")
+                                    ) : (
+                                      <span>Pick a date</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <CalendarComponent
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  disabled={(date) =>
+                                    date < new Date()
+                                  }
+                                  initialFocus
+                                  className={cn("p-3 pointer-events-auto")}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="comments"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Comments</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Enter comments" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit">Add Task</Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
             </div>
 
             <div className="bg-slate-50 rounded-lg p-4">
