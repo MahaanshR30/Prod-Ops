@@ -253,6 +253,9 @@ const Index = () => {
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
 
+  // Debug: Ensure the component is using the updated code
+  console.log("Index component loaded with tabs:", activeTab);
+
   const handleStatusUpdate = (projectId: number, statusType: 'status' | 'pmStatus' | 'opsStatus', newStatus: string) => {
     setProjectsData(prevProjects => 
       prevProjects.map(project => 
