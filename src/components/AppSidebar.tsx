@@ -1,5 +1,5 @@
 import { BarChart3, Users, AlertTriangle, Home, MapPin, Building2 } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import {
   Sidebar,
@@ -15,21 +15,21 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 const items = [
-  { title: "Overview", value: "overview", icon: Home },
-  { title: "Projects and Products", value: "projects", icon: BarChart3 },
-  { title: "Resources", value: "resources", icon: Users },
-  { title: "Seat Allocation", value: "seats", icon: MapPin },
-  { title: "Escalation", value: "escalation", icon: AlertTriangle },
+  { title: "Overview", path: "/", icon: Home },
+  { title: "Projects and Products", path: "/projects", icon: BarChart3 },
+  { title: "Resources", path: "/resources", icon: Users },
+  { title: "Seat Allocation", path: "/seats", icon: MapPin },
+  { title: "Escalation", path: "/escalation", icon: AlertTriangle },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const currentTab = searchParams.get("tab") || "overview";
+  const location = useLocation();
+  const currentPath = location.pathname;
 
-  const handleTabChange = (value: string) => {
-    navigate(`/?tab=${value}`);
+  const handleNavigation = (path: string) => {
+    navigate(path);
   };
 
   return (
@@ -53,8 +53,8 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    onClick={() => handleTabChange(item.value)}
-                    isActive={currentTab === item.value}
+                    onClick={() => handleNavigation(item.path)}
+                    isActive={currentPath === item.path}
                     className="w-full justify-start"
                   >
                     <item.icon className="mr-2 h-4 w-4" />
