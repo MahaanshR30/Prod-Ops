@@ -13,15 +13,16 @@ import { IssuesTracker } from "@/components/IssuesTracker";
 import { ExecutiveSummary } from "@/components/ExecutiveSummary";
 import { SeatAllocation } from "@/components/SeatAllocation";
 
-// Mock data for projects
+// Mock data for projects and products
 const projects = [
+  // Projects
   {
     id: 1,
-    name: "Mobile App Redesign",
+    name: "HUNT",
     status: "green" as const,
     progress: 85,
     dueDate: "2024-07-15",
-    department: "Product",
+    department: "Projects",
     lead: "Sarah Johnson",
     deliverables: 8,
     completedDeliverables: 7,
@@ -34,18 +35,18 @@ const projects = [
     opsStatus: "green" as const,
     healthTrend: "improving" as const,
     monthlyDeliverables: [
-      { id: 1, task: "UI/UX Design Completion", dueDate: "2024-07-15", comments: "Final review in progress" },
-      { id: 2, task: "Backend API Integration", dueDate: "2024-07-20", comments: "On track" },
-      { id: 3, task: "Testing Phase", dueDate: "2024-07-25", comments: "Waiting for development completion" }
+      { id: 1, task: "Phase 1 Completion", dueDate: "2024-07-15", comments: "Final review in progress" },
+      { id: 2, task: "User Testing", dueDate: "2024-07-20", comments: "On track" },
+      { id: 3, task: "Deployment", dueDate: "2024-07-25", comments: "Waiting for testing completion" }
     ]
   },
   {
     id: 2,
-    name: "API Integration Platform",
+    name: "MarketTime",
     status: "amber" as const,
     progress: 70,
     dueDate: "2024-07-10",
-    department: "Engineering",
+    department: "Projects",
     lead: "Michael Chen",
     deliverables: 12,
     completedDeliverables: 8,
@@ -58,18 +59,18 @@ const projects = [
     opsStatus: "red" as const,
     healthTrend: "declining" as const,
     monthlyDeliverables: [
-      { id: 1, task: "Database Schema Migration", dueDate: "2024-07-12", comments: "Delayed due to complexity" },
-      { id: 2, task: "Third-party API Testing", dueDate: "2024-07-18", comments: "Dependencies blocking progress" },
-      { id: 3, task: "Security Audit", dueDate: "2024-07-22", comments: "Scheduled for next week" }
+      { id: 1, task: "Market Analysis", dueDate: "2024-07-12", comments: "Delayed due to complexity" },
+      { id: 2, task: "Feature Development", dueDate: "2024-07-18", comments: "Dependencies blocking progress" },
+      { id: 3, task: "Integration Testing", dueDate: "2024-07-22", comments: "Scheduled for next week" }
     ]
   },
   {
     id: 3,
-    name: "Customer Analytics Dashboard",
+    name: "Abbvie",
     status: "red" as const,
     progress: 45,
     dueDate: "2024-06-30",
-    department: "Data",
+    department: "Projects",
     lead: "Emily Rodriguez",
     deliverables: 10,
     completedDeliverables: 4,
@@ -82,18 +83,18 @@ const projects = [
     opsStatus: "red" as const,
     healthTrend: "constant" as const,
     monthlyDeliverables: [
-      { id: 1, task: "Data Pipeline Setup", dueDate: "2024-07-14", comments: "Major technical challenges" },
-      { id: 2, task: "Report Generation Module", dueDate: "2024-07-21", comments: "Waiting for data pipeline" },
-      { id: 3, task: "User Interface Development", dueDate: "2024-07-28", comments: "Resource constraints" }
+      { id: 1, task: "Requirements Analysis", dueDate: "2024-07-14", comments: "Major technical challenges" },
+      { id: 2, task: "System Architecture", dueDate: "2024-07-21", comments: "Waiting for requirements" },
+      { id: 3, task: "Implementation Planning", dueDate: "2024-07-28", comments: "Resource constraints" }
     ]
   },
   {
     id: 4,
-    name: "Security Compliance Update",
+    name: "EIP",
     status: "green" as const,
     progress: 90,
     dueDate: "2024-07-20",
-    department: "Security",
+    department: "Projects",
     lead: "David Park",
     deliverables: 6,
     completedDeliverables: 5,
@@ -106,33 +107,130 @@ const projects = [
     opsStatus: "green" as const,
     healthTrend: "improving" as const,
     monthlyDeliverables: [
-      { id: 1, task: "Security Policy Updates", dueDate: "2024-07-16", comments: "Nearly complete" },
-      { id: 2, task: "Vulnerability Assessment", dueDate: "2024-07-19", comments: "Scheduled for this week" },
-      { id: 3, task: "Compliance Documentation", dueDate: "2024-07-24", comments: "Ready for review" }
+      { id: 1, task: "Final Documentation", dueDate: "2024-07-16", comments: "Nearly complete" },
+      { id: 2, task: "User Acceptance Testing", dueDate: "2024-07-19", comments: "Scheduled for this week" },
+      { id: 3, task: "Go-Live Preparation", dueDate: "2024-07-24", comments: "Ready for review" }
     ]
   },
+  // Products
   {
     id: 5,
-    name: "Marketing Automation Tool",
-    status: "amber" as const,
-    progress: 65,
+    name: "InsureTrek",
+    status: "green" as const,
+    progress: 88,
     dueDate: "2024-07-12",
-    department: "Marketing",
+    department: "Products",
     lead: "Jessica Wu",
     deliverables: 9,
-    completedDeliverables: 6,
-    blockers: 1,
+    completedDeliverables: 8,
+    blockers: 0,
     teamSize: 4,
     hoursAllocated: 360,
     hoursUsed: 280,
     lastCallDate: "2024-07-04",
     pmStatus: "green" as const,
-    opsStatus: "amber" as const,
+    opsStatus: "green" as const,
+    healthTrend: "improving" as const,
+    monthlyDeliverables: [
+      { id: 1, task: "Feature Enhancement", dueDate: "2024-07-17", comments: "Feature complete, testing needed" },
+      { id: 2, task: "Performance Optimization", dueDate: "2024-07-23", comments: "In progress" },
+      { id: 3, task: "Security Updates", dueDate: "2024-07-26", comments: "Planned after feature completion" }
+    ]
+  },
+  {
+    id: 6,
+    name: "Vigil",
+    status: "amber" as const,
+    progress: 75,
+    dueDate: "2024-07-18",
+    department: "Products",
+    lead: "Alex Thompson",
+    deliverables: 7,
+    completedDeliverables: 5,
+    blockers: 1,
+    teamSize: 3,
+    hoursAllocated: 280,
+    hoursUsed: 220,
+    lastCallDate: "2024-07-06",
+    pmStatus: "amber" as const,
+    opsStatus: "green" as const,
     healthTrend: "constant" as const,
     monthlyDeliverables: [
-      { id: 1, task: "Email Campaign Builder", dueDate: "2024-07-17", comments: "Feature complete, testing needed" },
-      { id: 2, task: "Analytics Dashboard", dueDate: "2024-07-23", comments: "UI development in progress" },
-      { id: 3, task: "Integration Testing", dueDate: "2024-07-26", comments: "Planned after feature completion" }
+      { id: 1, task: "Monitoring Dashboard", dueDate: "2024-07-19", comments: "UI refinements needed" },
+      { id: 2, task: "Alert System", dueDate: "2024-07-25", comments: "Backend complete" },
+      { id: 3, task: "Integration Testing", dueDate: "2024-07-28", comments: "Waiting for dashboard" }
+    ]
+  },
+  {
+    id: 7,
+    name: "Notiflow",
+    status: "green" as const,
+    progress: 92,
+    dueDate: "2024-07-22",
+    department: "Products",
+    lead: "Rachel Kim",
+    deliverables: 8,
+    completedDeliverables: 7,
+    blockers: 0,
+    teamSize: 5,
+    hoursAllocated: 400,
+    hoursUsed: 350,
+    lastCallDate: "2024-07-07",
+    pmStatus: "green" as const,
+    opsStatus: "green" as const,
+    healthTrend: "improving" as const,
+    monthlyDeliverables: [
+      { id: 1, task: "Notification Engine", dueDate: "2024-07-20", comments: "Complete" },
+      { id: 2, task: "User Interface Polish", dueDate: "2024-07-24", comments: "Final touches" },
+      { id: 3, task: "Load Testing", dueDate: "2024-07-26", comments: "Scheduled" }
+    ]
+  },
+  {
+    id: 8,
+    name: "DDS",
+    status: "amber" as const,
+    progress: 65,
+    dueDate: "2024-07-25",
+    department: "Products",
+    lead: "Tom Wilson",
+    deliverables: 11,
+    completedDeliverables: 7,
+    blockers: 2,
+    teamSize: 6,
+    hoursAllocated: 520,
+    hoursUsed: 380,
+    lastCallDate: "2024-07-08",
+    pmStatus: "amber" as const,
+    opsStatus: "amber" as const,
+    healthTrend: "declining" as const,
+    monthlyDeliverables: [
+      { id: 1, task: "Data Migration", dueDate: "2024-07-26", comments: "Complex schema issues" },
+      { id: 2, task: "API Development", dueDate: "2024-07-30", comments: "Depends on migration" },
+      { id: 3, task: "Frontend Updates", dueDate: "2024-08-02", comments: "Waiting for API" }
+    ]
+  },
+  {
+    id: 9,
+    name: "FS Zoo",
+    status: "green" as const,
+    progress: 80,
+    dueDate: "2024-07-28",
+    department: "Products",
+    lead: "Lisa Chen",
+    deliverables: 9,
+    completedDeliverables: 7,
+    blockers: 0,
+    teamSize: 4,
+    hoursAllocated: 350,
+    hoursUsed: 290,
+    lastCallDate: "2024-07-09",
+    pmStatus: "green" as const,
+    opsStatus: "green" as const,
+    healthTrend: "improving" as const,
+    monthlyDeliverables: [
+      { id: 1, task: "Animal Management System", dueDate: "2024-07-29", comments: "Core features complete" },
+      { id: 2, task: "Visitor Portal", dueDate: "2024-08-01", comments: "Design approved" },
+      { id: 3, task: "Reporting Module", dueDate: "2024-08-05", comments: "Development started" }
     ]
   }
 ];
@@ -169,6 +267,7 @@ const Index = () => {
   // Filter projects based on filters
   const filteredProjects = projectsData.filter(project => {
     if (filters.status !== "all" && project.status !== filters.status) return false;
+    if (filters.department !== "all" && project.department !== filters.department) return false;
     if (filters.assignee && !project.lead?.toLowerCase().includes(filters.assignee.toLowerCase())) return false;
     return true;
   });
@@ -291,9 +390,9 @@ const Index = () => {
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold">Projects Overview</h3>
+                  <h3 className="text-lg font-semibold">Projects and Products</h3>
                   <p className="text-sm text-muted-foreground">
-                    Track and manage all your active projects
+                    Track and manage all your active projects and products
                   </p>
                 </div>
                 {selectedProject && (
