@@ -84,6 +84,109 @@ export const SeatAllocation = () => {
     ));
   };
 
+  const renderSeatCard = (seat: Seat) => (
+    <Card 
+      key={seat.id} 
+      className={`cursor-pointer transition-all hover:shadow-md relative min-h-[100px] ${
+        seat.employee 
+          ? 'border-green-500 bg-green-50 dark:bg-green-950/20' 
+          : 'border-border hover:border-primary'
+      }`}
+    >
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <Badge variant={seat.employee ? "default" : "secondary"} className="text-xs">
+            {seat.id}
+          </Badge>
+        </div>
+        
+        {seat.employee ? (
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <User className="w-3 h-3 text-green-600" />
+              <span className="text-xs font-medium truncate">{seat.employee.name}</span>
+            </div>
+            <p className="text-xs text-muted-foreground truncate">{seat.employee.department}</p>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => unassignSeat(seat.id)}
+              className="w-full text-xs h-6"
+            >
+              Unassign
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <div className="text-xs text-muted-foreground">Available</div>
+            <Select onValueChange={(employeeName) => {
+              const employee = employees.find(e => e.name === employeeName);
+              if (employee) assignEmployee(seat.id, employee);
+            }}>
+              <SelectTrigger className="w-full h-6 text-xs">
+                <SelectValue placeholder="Assign" />
+              </SelectTrigger>
+              <SelectContent>
+                {employees.map((employee) => (
+                  <SelectItem key={employee.email} value={employee.name}>
+                    {employee.name} ({employee.department})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const renderLevel = (level: number) => {
+    const levelSeats = filteredSeats.filter(seat => seat.level === level);
+    const seatsPerRow = level === 1 ? 6 : 4;
+    const rows = level === 1 ? 8 : 13;
+    
+    if (selectedLevel !== "all" && selectedLevel !== level.toString()) {
+      return null;
+    }
+
+    return (
+      <div key={level} className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold">Level {level}</h2>
+          <Badge variant="outline">
+            {seatsPerRow} seats × {rows} rows = {seatsPerRow * rows} total
+          </Badge>
+        </div>
+        
+        <div className="border-2 border-dashed border-border rounded-lg p-4 bg-muted/20">
+          <div className="space-y-3">
+            {Array.from({ length: rows }, (_, rowIndex) => (
+              <div key={rowIndex} className="flex justify-center">
+                <div className="flex gap-2">
+                  {Array.from({ length: seatsPerRow }, (_, seatIndex) => {
+                    const seatNumber = rowIndex * seatsPerRow + seatIndex + 1;
+                    const seat = levelSeats.find(s => s.seatNumber === seatNumber);
+                    
+                    if (!seat) return null;
+                    
+                    return (
+                      <div key={seat.id} className="w-20">
+                        {renderSeatCard(seat)}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="ml-4 flex items-center text-xs text-muted-foreground">
+                  Row {rowIndex + 1}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
@@ -152,69 +255,16 @@ export const SeatAllocation = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Levels</SelectItem>
-            <SelectItem value="1">Level 1 (48 seats)</SelectItem>
-            <SelectItem value="2">Level 2 (52 seats)</SelectItem>
+            <SelectItem value="1">Level 1 (6×8 layout)</SelectItem>
+            <SelectItem value="2">Level 2 (4×13 layout)</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Seats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-        {filteredSeats.map((seat) => (
-          <Card 
-            key={seat.id} 
-            className={`cursor-pointer transition-all hover:shadow-md ${
-              seat.employee ? 'border-green-200 bg-green-50' : 'border-gray-200 hover:border-blue-300'
-            }`}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant={seat.employee ? "default" : "secondary"}>
-                  {seat.id}
-                </Badge>
-                <span className="text-xs text-muted-foreground">L{seat.level}</span>
-              </div>
-              
-              {seat.employee ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-medium">{seat.employee.name}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{seat.employee.department}</p>
-                  <p className="text-xs text-muted-foreground">{seat.employee.email}</p>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => unassignSeat(seat.id)}
-                    className="w-full"
-                  >
-                    Unassign
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="text-sm text-muted-foreground">Available</div>
-                  <Select onValueChange={(employeeName) => {
-                    const employee = employees.find(e => e.name === employeeName);
-                    if (employee) assignEmployee(seat.id, employee);
-                  }}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Assign employee" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employees.map((employee) => (
-                        <SelectItem key={employee.email} value={employee.name}>
-                          {employee.name} ({employee.department})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+      {/* Office Levels */}
+      <div className="space-y-8">
+        {renderLevel(1)}
+        {renderLevel(2)}
       </div>
     </div>
   );
