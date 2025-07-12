@@ -143,7 +143,7 @@ const ProjectDetail: React.FC = () => {
             <h1 className="text-2xl font-bold text-slate-900 mb-4">Project Not Found</h1>
             <Button onClick={handleBackNavigation} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Back to Projects and Products 
             </Button>
           </div>
         </div>
@@ -185,7 +185,7 @@ const ProjectDetail: React.FC = () => {
         <div className="flex items-center justify-between p-6 pb-0">
           <Button onClick={handleBackNavigation} variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+            Back to Projects and Products 
           </Button>
           <Badge variant="outline" className="text-sm">
             Last updated: {new Date().toLocaleDateString()}
