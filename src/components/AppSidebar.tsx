@@ -36,11 +36,11 @@ export function AppSidebar() {
     <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
       <SidebarContent>
         {/* Company Logo Section */}
-        <div className="p-4 flex justify-center">
+        <div className="p-4">
           <img 
             src="/lovable-uploads/879143aa-ce79-4855-b44f-d4ceec691dd6.png" 
             alt="Foxsense Innovations" 
-            className={state === "collapsed" ? "h-8 w-8 object-contain" : "h-12 w-auto object-contain"}
+            className={state === "collapsed" ? "h-8 w-8 object-contain mx-auto" : "w-full h-12 object-contain"}
           />
         </div>
         
