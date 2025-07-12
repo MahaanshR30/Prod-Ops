@@ -108,10 +108,10 @@ export const ResourceAllocation = () => {
       <div className="space-y-6">
         <div className="flex gap-6 h-[calc(100vh-200px)]">
           {/* Employee List Sidebar */}
-          <div className="w-80 bg-card rounded-lg border overflow-hidden">
-            <div className="p-4 border-b bg-muted/50">
-              <h3 className="font-semibold text-lg">Available Employees</h3>
-              <p className="text-sm text-muted-foreground">Drag employees to assign them to projects</p>
+          <div className="w-72 bg-card rounded-lg border overflow-hidden">
+            <div className="p-3 border-b bg-muted/50">
+              <h3 className="font-semibold text-base">Available Employees</h3>
+              <p className="text-xs text-muted-foreground">Drag to assign to projects</p>
             </div>
             
             <Droppable droppableId="employees" isDropDisabled={true}>
@@ -119,7 +119,7 @@ export const ResourceAllocation = () => {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="p-4 space-y-3 overflow-y-auto max-h-full"
+                  className="p-2 space-y-2 overflow-y-auto max-h-full"
                 >
                   {employees.map((employee, index) => {
                     const IconComponent = getDepartmentIcon(employee.department);
@@ -131,32 +131,32 @@ export const ResourceAllocation = () => {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className={`p-3 bg-background border rounded-lg cursor-grab active:cursor-grabbing transition-all ${
+                            className={`p-2 bg-background border rounded-md cursor-grab active:cursor-grabbing transition-all ${
                               snapshot.isDragging ? 'shadow-lg scale-105 rotate-2' : 'hover:shadow-md'
                             }`}
                           >
-                            <div className="flex items-start gap-3">
-                              <Avatar className="h-10 w-10 shrink-0">
-                                <AvatarFallback className="bg-primary/10 text-primary">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-8 w-8 shrink-0">
+                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
                                   {getInitials(employee.name)}
                                 </AvatarFallback>
                               </Avatar>
                               
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-medium text-sm truncate">{employee.name}</h4>
-                                  <IconComponent className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <div className="flex items-center gap-1 mb-1">
+                                  <h4 className="font-medium text-xs truncate">{employee.name}</h4>
+                                  <IconComponent className="h-3 w-3 text-muted-foreground shrink-0" />
                                 </div>
-                                <p className="text-xs text-muted-foreground mb-2">{employee.role}</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {employee.skills.slice(0, 3).map((skill) => (
-                                    <Badge key={skill} variant="secondary" className="text-xs px-2 py-0">
+                                <p className="text-xs text-muted-foreground truncate">{employee.role}</p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {employee.skills.slice(0, 2).map((skill) => (
+                                    <Badge key={skill} variant="secondary" className="text-xs px-1 py-0 h-4">
                                       {skill}
                                     </Badge>
                                   ))}
-                                  {employee.skills.length > 3 && (
-                                    <Badge variant="outline" className="text-xs px-2 py-0">
-                                      +{employee.skills.length - 3}
+                                  {employee.skills.length > 2 && (
+                                    <Badge variant="outline" className="text-xs px-1 py-0 h-4">
+                                      +{employee.skills.length - 2}
                                     </Badge>
                                   )}
                                 </div>
@@ -211,37 +211,37 @@ export const ResourceAllocation = () => {
                         }`}
                       >
                         {projectAllocations[project.id]?.length > 0 ? (
-                          <div className="space-y-3">
+                          <div className="space-y-2">
                             {projectAllocations[project.id].map((employee) => {
                               const IconComponent = getDepartmentIcon(employee.department);
                               
                               return (
-                                <div key={employee.id} className="flex items-center gap-3 p-2 bg-muted/50 rounded-lg">
-                                  <Avatar className="h-8 w-8">
+                                <div key={employee.id} className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+                                  <Avatar className="h-7 w-7 shrink-0">
                                     <AvatarFallback className="bg-primary/10 text-primary text-xs">
                                       {getInitials(employee.name)}
                                     </AvatarFallback>
                                   </Avatar>
                                   
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <p className="font-medium text-sm truncate">{employee.name}</p>
-                                      <IconComponent className="h-3 w-3 text-muted-foreground" />
+                                    <div className="flex items-center gap-1">
+                                      <p className="font-medium text-xs truncate">{employee.name}</p>
+                                      <IconComponent className="h-3 w-3 text-muted-foreground shrink-0" />
                                     </div>
-                                    <p className="text-xs text-muted-foreground">{employee.role}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{employee.role}</p>
                                   </div>
                                   
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 shrink-0">
                                     <Select
                                       value={employee.allocation.toString()}
                                       onValueChange={(value) => updateAllocation(project.id.toString(), employee.id, parseInt(value))}
                                     >
-                                      <SelectTrigger className="w-20 h-7 text-xs">
+                                      <SelectTrigger className="w-16 h-6 text-xs">
                                         <SelectValue />
                                       </SelectTrigger>
-                                      <SelectContent>
+                                      <SelectContent align="end" className="min-w-[80px]">
                                         {allocationOptions.map((option) => (
-                                          <SelectItem key={option} value={option.toString()}>
+                                          <SelectItem key={option} value={option.toString()} className="text-xs">
                                             {option}%
                                           </SelectItem>
                                         ))}
@@ -250,7 +250,7 @@ export const ResourceAllocation = () => {
                                     
                                     <button
                                       onClick={() => removeEmployeeFromProject(project.id.toString(), employee.id)}
-                                      className="text-muted-foreground hover:text-destructive p-1"
+                                      className="text-muted-foreground hover:text-destructive p-0.5 shrink-0"
                                     >
                                       <Trash2 className="h-3 w-3" />
                                     </button>
@@ -260,10 +260,10 @@ export const ResourceAllocation = () => {
                             })}
                           </div>
                         ) : (
-                          <div className="flex items-center justify-center h-full text-center">
+                          <div className="flex items-center justify-center h-full text-center min-h-[100px]">
                             <div className="text-muted-foreground">
-                              <p className="text-sm font-medium">Drop employees here</p>
-                              <p className="text-xs">Drag employees from the sidebar to assign them</p>
+                              <p className="text-xs font-medium">Drop employees here</p>
+                              <p className="text-xs">Drag from sidebar to assign</p>
                             </div>
                           </div>
                         )}
