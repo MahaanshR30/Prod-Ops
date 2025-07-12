@@ -60,7 +60,7 @@ const statusConfig = {
   },
   "de-committed": {
     color: "bg-purple-500",
-    label: "De-Committed",
+    label: "De-Comm",
     textColor: "text-purple-700",
     bgColor: "bg-purple-50",
   }
