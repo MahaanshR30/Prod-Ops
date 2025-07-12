@@ -17,15 +17,18 @@ interface TaskFiltersProps {
 }
 
 export const TaskFilters: React.FC<TaskFiltersProps> = ({ filters, onFiltersChange }) => {
+  // Defensive check for filters - provide default if null/undefined
+  const safeFilters = filters || { status: 'all', type: 'all', assignee: '', department: 'all' };
+  
   const updateFilter = (key: keyof Filters, value: string) => {
-    onFiltersChange({ ...filters, [key]: value });
+    onFiltersChange({ ...safeFilters, [key]: value });
   };
 
   const clearFilters = () => {
     onFiltersChange({ status: 'all', type: 'all', assignee: '', department: 'all' });
   };
 
-  const hasActiveFilters = Object.entries(filters).some(([key, value]) => 
+  const hasActiveFilters = Object.entries(safeFilters).some(([key, value]) => 
     key === 'assignee' ? value !== '' : value !== 'all'
   );
 
@@ -81,7 +84,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({ filters, onFiltersChan
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-8">
               <Filter className="w-4 h-4 mr-2" />
-              Status: {getStatusLabel(filters.status)}
+              Status: {getStatusLabel(safeFilters.status)}
               <ChevronDown className="w-4 h-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>
@@ -107,7 +110,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({ filters, onFiltersChan
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-8">
               <Filter className="w-4 h-4 mr-2" />
-              Type: {getTypeLabel(filters.type)}
+              Type: {getTypeLabel(safeFilters.type)}
               <ChevronDown className="w-4 h-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>
@@ -136,7 +139,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({ filters, onFiltersChan
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-8">
               <Filter className="w-4 h-4 mr-2" />
-              Department: {getDepartmentLabel(filters.department)}
+              Department: {getDepartmentLabel(safeFilters.department)}
               <ChevronDown className="w-4 h-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>
@@ -165,7 +168,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({ filters, onFiltersChan
           <span className="text-sm text-slate-600">Assignee:</span>
           <Input
             placeholder="Search assignee..."
-            value={filters.assignee}
+            value={safeFilters.assignee}
             onChange={(e) => updateFilter('assignee', e.target.value)}
             className="h-8 w-48"
           />
