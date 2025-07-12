@@ -461,7 +461,7 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
                         </div>
                         <p className="text-sm text-slate-600 mb-2">{issue.description}</p>
                         <div className="text-xs text-slate-500">
-                          Project: {issue.projectName} • Assignee: {issue.assignee} • Created: {new Date(issue.dateCreated).toLocaleDateString()}
+                          Project: {projects.find(p => p.id === issue.projectId)?.name || issue.projectName} • Assignee: {issue.assignee} • Created: {new Date(issue.dateCreated).toLocaleDateString()}
                         </div>
                       </div>
                     </div>
