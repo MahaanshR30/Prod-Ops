@@ -36,10 +36,10 @@ const mockProjects = [
       { id: 3, task: "Testing Phase", dueDate: "2024-07-25", comments: "Waiting for development completion", description: "Comprehensive testing of all features", type: "adhoc", assignee: "Mike Johnson", department: "QA", status: "amber" as const }
     ],
     pastWeeksStatus: [
-      { week: "Week 1", status: "green" as const },
-      { week: "Week 2", status: "green" as const },
-      { week: "Week 3", status: "amber" as const },
-      { week: "Week 4", status: "green" as const }
+      { week: "Week-1", status: "green" as const },
+      { week: "Week-2", status: "green" as const },
+      { week: "Week-3", status: "amber" as const },
+      { week: "Week-4", status: "green" as const }
     ]
   },
   {
@@ -66,10 +66,10 @@ const mockProjects = [
       { id: 3, task: "Security Audit", dueDate: "2024-07-22", comments: "Scheduled for next week", description: "Comprehensive security audit", type: "adhoc", assignee: "David Kim", department: "PM", status: "green" as const }
     ],
     pastWeeksStatus: [
-      { week: "Week 1", status: "amber" as const },
-      { week: "Week 2", status: "red" as const },
-      { week: "Week 3", status: "red" as const },
-      { week: "Week 4", status: "amber" as const }
+      { week: "Week-1", status: "amber" as const },
+      { week: "Week-2", status: "red" as const },
+      { week: "Week-3", status: "red" as const },
+      { week: "Week-4", status: "amber" as const }
     ]
   },
   {
@@ -96,10 +96,10 @@ const mockProjects = [
       { id: 3, task: "User Interface Development", dueDate: "2024-07-28", comments: "Resource constraints", description: "Build user interface components", type: "new-feature", assignee: "Lisa Chen", department: "Design", status: "amber" as const }
     ],
     pastWeeksStatus: [
-      { week: "Week 1", status: "red" as const },
-      { week: "Week 2", status: "red" as const },
-      { week: "Week 3", status: "red" as const },
-      { week: "Week 4", status: "red" as const }
+      { week: "Week-1", status: "red" as const },
+      { week: "Week-2", status: "red" as const },
+      { week: "Week-3", status: "red" as const },
+      { week: "Week-4", status: "red" as const }
     ]
   },
   {
@@ -126,10 +126,10 @@ const mockProjects = [
       { id: 3, task: "Compliance Documentation", dueDate: "2024-07-24", comments: "Ready for review", description: "Prepare compliance documentation", type: "feature-request", assignee: "Compliance Team", department: "PM", status: "green" as const }
     ],
     pastWeeksStatus: [
-      { week: "Week 1", status: "green" as const },
-      { week: "Week 2", status: "green" as const },
-      { week: "Week 3", status: "green" as const },
-      { week: "Week 4", status: "green" as const }
+      { week: "Week-1", status: "green" as const },
+      { week: "Week-2", status: "green" as const },
+      { week: "Week-3", status: "green" as const },
+      { week: "Week-4", status: "green" as const }
     ]
   },
   {
@@ -156,10 +156,10 @@ const mockProjects = [
       { id: 3, task: "Integration Testing", dueDate: "2024-07-26", comments: "Planned after feature completion", description: "Test system integrations", type: "adhoc", assignee: "QA Team", department: "QA", status: "green" as const }
     ],
     pastWeeksStatus: [
-      { week: "Week 1", status: "green" as const },
-      { week: "Week 2", status: "amber" as const },
-      { week: "Week 3", status: "amber" as const },
-      { week: "Week 4", status: "amber" as const }
+      { week: "Week-1", status: "green" as const },
+      { week: "Week-2", status: "amber" as const },
+      { week: "Week-3", status: "amber" as const },
+      { week: "Week-4", status: "amber" as const }
     ]
   }
 ];
@@ -195,11 +195,11 @@ const ProjectDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState('project');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
-  const [projectData, setProjectData] = useState(() => 
+  const [currentProject, setCurrentProject] = useState<any>(() => 
     mockProjects.find(p => p.id === parseInt(id || '0'))
   );
   
-  const project = projectData;
+  const project = currentProject;
 
   const handleAddTask = (taskData: any) => {
     if (!project) return;
@@ -222,7 +222,7 @@ const ProjectDetail: React.FC = () => {
       monthlyDeliverables: [...project.monthlyDeliverables, newTask]
     };
     
-    setProjectData(updatedProject as any);
+    setCurrentProject(updatedProject as any);
   };
 
   const handleTaskClick = (task: any) => {
@@ -231,9 +231,24 @@ const ProjectDetail: React.FC = () => {
   };
 
   const handleBackNavigation = () => {
-    // Get the previous page from location state or default to dashboard
     const previousSection = location.state?.from || '/';
     navigate(previousSection);
+  };
+
+  const handleStatusUpdate = (statusType: 'pmStatus' | 'opsStatus', newStatus: string) => {
+    if (!project) return;
+    setCurrentProject({
+      ...project,
+      [statusType]: newStatus
+    } as any);
+  };
+
+  const handleWeeklyStatusAdd = (weekStatus: { week: string; status: 'red' | 'amber' | 'green' | 'not-started' }) => {
+    if (!project) return;
+    setCurrentProject({
+      ...project,
+      pastWeeksStatus: [...project.pastWeeksStatus, weekStatus]
+    } as any);
   };
   
   if (!project) {
@@ -294,7 +309,11 @@ const ProjectDetail: React.FC = () => {
 
         {/* Project Header */}
         <div className="px-6 py-4">
-          <ProjectHeader project={project} />
+        <ProjectHeader 
+          project={project} 
+          onStatusUpdate={handleStatusUpdate}
+          onWeeklyStatusAdd={handleWeeklyStatusAdd}
+        />
         </div>
 
         {/* Navigation */}

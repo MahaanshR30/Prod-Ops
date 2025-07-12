@@ -1,16 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar, Users, AlertTriangle, Clock, Phone } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 
 interface Project {
   id: number;
   name: string;
-  status: "green" | "amber" | "red";
+  status: "green" | "amber" | "red" | "not-started";
   progress: number;
   dueDate: string;
   department: string;
@@ -22,8 +23,8 @@ interface Project {
   hoursAllocated: number;
   hoursUsed: number;
   lastCallDate: string;
-  pmStatus: "green" | "amber" | "red";
-  opsStatus: "green" | "amber" | "red";
+  pmStatus: "green" | "amber" | "red" | "not-started";
+  opsStatus: "green" | "amber" | "red" | "not-started";
   monthlyDeliverables: Array<{
     id: number;
     task: string;
@@ -34,33 +35,41 @@ interface Project {
 
 interface ProjectCardProps {
   project: Project;
+  onStatusUpdate?: (projectId: number, statusType: 'status' | 'pmStatus' | 'opsStatus', newStatus: string) => void;
 }
 
 const statusConfig = {
   green: {
     color: "bg-green-500",
-    label: "On Track",
+    label: "Green",
     textColor: "text-green-700",
     bgColor: "bg-green-50",
     borderColor: "border-green-200"
   },
   amber: {
     color: "bg-amber-500", 
-    label: "At Risk",
+    label: "Amber",
     textColor: "text-amber-700",
     bgColor: "bg-amber-50",
     borderColor: "border-amber-200"
   },
   red: {
     color: "bg-red-500",
-    label: "Delayed", 
+    label: "Red", 
     textColor: "text-red-700",
     bgColor: "bg-red-50",
     borderColor: "border-red-200"
+  },
+  "not-started": {
+    color: "bg-slate-500",
+    label: "Not Started",
+    textColor: "text-slate-700",
+    bgColor: "bg-slate-50",
+    borderColor: "border-slate-200"
   }
 };
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
+export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusUpdate }) => {
   const config = statusConfig[project.status];
   const pmConfig = statusConfig[project.pmStatus];
   const opsConfig = statusConfig[project.opsStatus];
@@ -82,12 +91,26 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
             <CardTitle className="text-lg font-semibold text-slate-900">{project.name}</CardTitle>
             <Badge variant="outline" className="text-xs">{project.department}</Badge>
           </div>
-          <div className={`px-2 py-1 rounded-full ${config.bgColor} ${config.textColor}`}>
-            <div className="flex items-center gap-1">
-              <div className={`w-2 h-2 rounded-full ${config.color}`}></div>
-              <span className="text-xs font-medium">{config.label}</span>
-            </div>
-          </div>
+          <Select 
+            value={project.status} 
+            onValueChange={(newStatus: any) => onStatusUpdate?.(project.id, 'status', newStatus)}
+          >
+            <SelectTrigger 
+              className={`h-7 w-auto text-xs ${config.textColor} ${config.bgColor} border-none hover:bg-opacity-80`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-1">
+                <div className={`w-2 h-2 rounded-full ${config.color}`}></div>
+                <SelectValue />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="green">Green</SelectItem>
+              <SelectItem value="amber">Amber</SelectItem>
+              <SelectItem value="red">Red</SelectItem>
+              <SelectItem value="not-started">Not Started</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
       
@@ -108,24 +131,52 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="text-sm font-medium text-slate-700">PM Status</div>
-              <div className={`px-2 py-1 rounded-full ${pmConfig.bgColor} ${pmConfig.textColor}`}>
-                <div className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${pmConfig.color}`}></div>
-                  <span className="text-xs font-medium">{pmConfig.label}</span>
-                </div>
-              </div>
+              <Select 
+                value={project.pmStatus} 
+                onValueChange={(newStatus: any) => onStatusUpdate?.(project.id, 'pmStatus', newStatus)}
+              >
+                <SelectTrigger 
+                  className={`h-6 w-auto text-xs ${pmConfig.textColor} ${pmConfig.bgColor} border-none hover:bg-opacity-80`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center gap-1">
+                    <div className={`w-2 h-2 rounded-full ${pmConfig.color}`}></div>
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="green">Green</SelectItem>
+                  <SelectItem value="amber">Amber</SelectItem>
+                  <SelectItem value="red">Red</SelectItem>
+                  <SelectItem value="not-started">Not Started</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="text-sm font-medium text-slate-700">Ops Status</div>
-              <div className={`px-2 py-1 rounded-full ${opsConfig.bgColor} ${opsConfig.textColor}`}>
-                <div className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${opsConfig.color}`}></div>
-                  <span className="text-xs font-medium">{opsConfig.label}</span>
-                </div>
-              </div>
+              <Select 
+                value={project.opsStatus} 
+                onValueChange={(newStatus: any) => onStatusUpdate?.(project.id, 'opsStatus', newStatus)}
+              >
+                <SelectTrigger 
+                  className={`h-6 w-auto text-xs ${opsConfig.textColor} ${opsConfig.bgColor} border-none hover:bg-opacity-80`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center gap-1">
+                    <div className={`w-2 h-2 rounded-full ${opsConfig.color}`}></div>
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="green">Green</SelectItem>
+                  <SelectItem value="amber">Amber</SelectItem>
+                  <SelectItem value="red">Red</SelectItem>
+                  <SelectItem value="not-started">Not Started</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>

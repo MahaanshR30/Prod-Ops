@@ -31,7 +31,7 @@ interface Issue {
   projectName: string;
   title: string;
   description: string;
-  severity: "low" | "medium" | "high" | "critical";
+  severity: "Sev1" | "Sev2" | "Sev3" | "Incident";
   status: "unresolved" | "resolved";
   assignee: string;
   dateCreated: string;
@@ -54,7 +54,7 @@ const mockIssues: Issue[] = [
     title: "Database connection timeout",
     description: "Intermittent connection timeouts causing API failures during peak hours",
     elaborateDescription: "We are experiencing intermittent database connection timeouts specifically during peak traffic hours (9 AM - 11 AM and 2 PM - 4 PM). This is causing cascading failures in our API endpoints, resulting in 504 Gateway Timeout errors for approximately 15% of requests during these periods. The issue appears to be related to connection pool exhaustion and may require optimization of our database connection management strategy. We have identified that the current connection pool size of 20 may be insufficient for our current load patterns. Additionally, some long-running queries are not being properly terminated, leading to connection leaks.",
-    severity: "high",
+    severity: "Sev1",
     status: "unresolved",
     assignee: "Michael Chen",
     dateCreated: "2024-06-25",
@@ -68,7 +68,7 @@ const mockIssues: Issue[] = [
     title: "Third-party API rate limiting",
     description: "External service rate limits blocking batch operations",
     elaborateDescription: "Our integration with the third-party payment processing API is being throttled due to rate limiting. The external service allows only 100 requests per minute, but our batch processing jobs require up to 500 requests during peak operations. This is causing significant delays in payment processing and order fulfillment. We need to implement a queue-based system with exponential backoff to respect the rate limits while maintaining system performance. The current implementation does not handle rate limit responses gracefully and simply fails the entire batch operation.",
-    severity: "medium",
+    severity: "Sev2",
     status: "unresolved",
     assignee: "Sarah Johnson",
     dateCreated: "2024-06-24",
@@ -82,7 +82,7 @@ const mockIssues: Issue[] = [
     title: "Data pipeline failing",
     description: "ETL process failing due to schema changes in source system",
     elaborateDescription: "The data pipeline responsible for customer analytics has been failing since the upstream CRM system updated their database schema on June 20th. The new schema includes additional fields and has changed the data types for several existing columns, breaking our ETL mappings. This is preventing the analytics dashboard from receiving updated customer data, making the reports stale and unreliable. We need to update our data transformation logic to accommodate the new schema and implement better schema validation to prevent future failures. The issue affects all customer segmentation reports and revenue analytics.",
-    severity: "critical",
+    severity: "Incident",
     status: "unresolved",
     assignee: "Emily Rodriguez",
     dateCreated: "2024-06-23",
@@ -96,7 +96,7 @@ const mockIssues: Issue[] = [
     title: "Performance issues with large datasets",
     description: "Dashboard loading times exceed 30 seconds for enterprise customers",
     elaborateDescription: "Enterprise customers with large datasets (>1M records) are experiencing unacceptable dashboard loading times of 30-45 seconds. The current implementation loads all data client-side and performs filtering and aggregation in the browser, which is not scalable. We need to implement server-side pagination, pre-computed aggregations, and data virtualization to improve performance. The issue is particularly severe for customers in the retail and e-commerce sectors who have high transaction volumes. This is impacting customer satisfaction and retention rates.",
-    severity: "high",
+    severity: "Sev1",
     status: "unresolved",
     assignee: "David Park",
     dateCreated: "2024-06-22",
@@ -110,7 +110,7 @@ const mockIssues: Issue[] = [
     title: "Missing user permissions module",
     description: "Role-based access control not implemented for sensitive data",
     elaborateDescription: "The customer analytics dashboard currently lacks proper role-based access control, allowing all users to view sensitive customer data regardless of their authorization level. This poses a significant security and compliance risk, especially for handling PII and financial data. We need to implement a comprehensive permissions system that restricts access to sensitive data based on user roles and departments. The system should support granular permissions at the field level and maintain audit logs for compliance purposes. This is blocking our SOC 2 certification process.",
-    severity: "medium",
+    severity: "Sev2",
     status: "resolved",
     assignee: "Emily Rodriguez",
     dateCreated: "2024-06-21",
@@ -124,7 +124,7 @@ const mockIssues: Issue[] = [
     title: "Email template rendering issues",
     description: "Templates not displaying correctly in certain email clients",
     elaborateDescription: "Email templates generated by our marketing automation tool are not rendering correctly in Outlook 2016/2019 and some versions of Apple Mail. The issue is caused by CSS compatibility problems and the use of modern HTML features that are not supported by older email clients. Approximately 30% of our recipients use these problematic clients, resulting in broken layouts and poor user experience. We need to refactor the email templates to use more conservative HTML/CSS that is compatible with legacy email clients while maintaining visual appeal. This issue is affecting campaign effectiveness and brand perception.",
-    severity: "medium",
+    severity: "Sev2",
     status: "resolved",
     assignee: "Jessica Wu",
     dateCreated: "2024-06-20",
@@ -134,10 +134,10 @@ const mockIssues: Issue[] = [
 ];
 
 const severityConfig = {
-  low: { color: "bg-blue-500", label: "Low", textColor: "text-blue-700", bgColor: "bg-blue-50" },
-  medium: { color: "bg-yellow-500", label: "Medium", textColor: "text-yellow-700", bgColor: "bg-yellow-50" },
-  high: { color: "bg-orange-500", label: "High", textColor: "text-orange-700", bgColor: "bg-orange-50" },
-  critical: { color: "bg-red-500", label: "Critical", textColor: "text-red-700", bgColor: "bg-red-50" }
+  Sev3: { color: "bg-blue-500", label: "Sev3", textColor: "text-blue-700", bgColor: "bg-blue-50" },
+  Sev2: { color: "bg-yellow-500", label: "Sev2", textColor: "text-yellow-700", bgColor: "bg-yellow-50" },
+  Sev1: { color: "bg-orange-500", label: "Sev1", textColor: "text-orange-700", bgColor: "bg-orange-50" },
+  Incident: { color: "bg-red-500", label: "Incident", textColor: "text-red-700", bgColor: "bg-red-50" }
 };
 
 const statusConfig = {
@@ -168,20 +168,20 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
     total: issues.length,
     unresolved: issues.filter(i => i.status === "unresolved").length,
     resolved: issues.filter(i => i.status === "resolved").length,
-    critical: issues.filter(i => i.severity === "critical").length,
-    high: issues.filter(i => i.severity === "high").length
+    incident: issues.filter(i => i.severity === "Incident").length,
+    sev1: issues.filter(i => i.severity === "Sev1").length
   };
 
   // Department issue breakdown
   const departmentIssues = issues.reduce((acc, issue) => {
     if (!acc[issue.department]) {
-      acc[issue.department] = { total: 0, unresolved: 0, critical: 0 };
+      acc[issue.department] = { total: 0, unresolved: 0, incident: 0 };
     }
     acc[issue.department].total += 1;
     if (issue.status === "unresolved") acc[issue.department].unresolved += 1;
-    if (issue.severity === "critical") acc[issue.department].critical += 1;
+    if (issue.severity === "Incident") acc[issue.department].incident += 1;
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as Record<string, { total: number; unresolved: number; incident: number }>);
 
   const handleIssueClick = (issue: Issue) => {
     setSelectedIssue(issue);
@@ -194,6 +194,16 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
       prevIssues.map(issue => 
         issue.id === issueId 
           ? { ...issue, status: newStatus, dateResolved: newStatus === "resolved" ? new Date().toISOString() : undefined }
+          : issue
+      )
+    );
+  };
+
+  const handleSeverityUpdate = (issueId: number, newSeverity: "Sev1" | "Sev2" | "Sev3" | "Incident") => {
+    setIssues(prevIssues => 
+      prevIssues.map(issue => 
+        issue.id === issueId 
+          ? { ...issue, severity: newSeverity }
           : issue
       )
     );
@@ -213,7 +223,7 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">{issueStats.unresolved}</div>
             <p className="text-xs text-slate-600 mt-1">
-              {issueStats.critical} critical, {issueStats.high} high priority
+              {issueStats.incident} incident, {issueStats.sev1} Sev1 priority
             </p>
           </CardContent>
         </Card>
@@ -266,8 +276,8 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
                     <span className="font-medium text-red-600">{stats.unresolved}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Critical:</span>
-                    <span className="font-medium text-red-600">{stats.critical}</span>
+                    <span>Incident:</span>
+                    <span className="font-medium text-red-600">{stats.incident}</span>
                   </div>
                 </div>
               </div>
@@ -312,10 +322,10 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
                       <SelectValue placeholder="Severity" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
+                      <SelectItem value="Sev3">Sev3</SelectItem>
+                      <SelectItem value="Sev2">Sev2</SelectItem>
+                      <SelectItem value="Sev1">Sev1</SelectItem>
+                      <SelectItem value="Incident">Incident</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button className="w-full">Create Issue</Button>
@@ -367,10 +377,10 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Severity</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="Incident">Incident</SelectItem>
+                <SelectItem value="Sev1">Sev1</SelectItem>
+                <SelectItem value="Sev2">Sev2</SelectItem>
+                <SelectItem value="Sev3">Sev3</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -397,11 +407,20 @@ export const IssuesTracker: React.FC<IssuesTrackerProps> = ({ projects }) => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-medium text-slate-900">{issue.title}</h4>
-                          <Badge 
-                            className={`text-xs ${severityStyle.textColor} ${severityStyle.bgColor}`}
-                          >
-                            {severityStyle.label}
-                          </Badge>
+                          <Select value={issue.severity} onValueChange={(newSeverity: any) => handleSeverityUpdate(issue.id, newSeverity)}>
+                            <SelectTrigger 
+                              className={`h-6 w-auto text-xs ${severityStyle.textColor} ${severityStyle.bgColor} border-none hover:bg-opacity-80`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Sev3">Sev3</SelectItem>
+                              <SelectItem value="Sev2">Sev2</SelectItem>
+                              <SelectItem value="Sev1">Sev1</SelectItem>
+                              <SelectItem value="Incident">Incident</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <Badge 
                             variant="outline"
                             className={`text-xs ${statusStyle.textColor} cursor-pointer hover:bg-slate-100 transition-colors`}

@@ -149,19 +149,30 @@ const statusLabels = {
 
 const Index = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const [projectsData, setProjectsData] = useState(projects);
+
+  const handleStatusUpdate = (projectId: number, statusType: 'status' | 'pmStatus' | 'opsStatus', newStatus: string) => {
+    setProjectsData(prevProjects => 
+      prevProjects.map(project => 
+        project.id === projectId 
+          ? { ...project, [statusType]: newStatus }
+          : project
+      )
+    );
+  };
   
   const filteredProjects = selectedFilter === "all" 
-    ? projects 
-    : projects.filter(project => project.status === selectedFilter);
+    ? projectsData 
+    : projectsData.filter(project => project.status === selectedFilter);
 
-  const greenCount = projects.filter(p => p.status === "green").length;
-  const amberCount = projects.filter(p => p.status === "amber").length;
-  const redCount = projects.filter(p => p.status === "red").length;
+  const greenCount = projectsData.filter(p => p.status === "green").length;
+  const amberCount = projectsData.filter(p => p.status === "amber").length;
+  const redCount = projectsData.filter(p => p.status === "red").length;
 
-  const totalProjects = projects.length;
-  const totalDeliverables = projects.reduce((sum, p) => sum + p.deliverables, 0);
-  const completedDeliverables = projects.reduce((sum, p) => sum + p.completedDeliverables, 0);
-  const totalBlockers = projects.reduce((sum, p) => sum + p.blockers, 0);
+  const totalProjects = projectsData.length;
+  const totalDeliverables = projectsData.reduce((sum, p) => sum + p.deliverables, 0);
+  const completedDeliverables = projectsData.reduce((sum, p) => sum + p.completedDeliverables, 0);
+  const totalBlockers = projectsData.reduce((sum, p) => sum + p.blockers, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
@@ -251,10 +262,10 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">
-                {Math.round((projects.reduce((sum, p) => sum + p.hoursUsed, 0) / projects.reduce((sum, p) => sum + p.hoursAllocated, 0)) * 100)}%
+                {Math.round((projectsData.reduce((sum, p) => sum + p.hoursUsed, 0) / projectsData.reduce((sum, p) => sum + p.hoursAllocated, 0)) * 100)}%
               </div>
               <p className="text-xs text-slate-600 mt-2">
-                {projects.reduce((sum, p) => sum + p.hoursUsed, 0)}h / {projects.reduce((sum, p) => sum + p.hoursAllocated, 0)}h allocated
+                {projectsData.reduce((sum, p) => sum + p.hoursUsed, 0)}h / {projectsData.reduce((sum, p) => sum + p.hoursAllocated, 0)}h allocated
               </p>
             </CardContent>
           </Card>
@@ -270,7 +281,7 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <ExecutiveSummary projects={projects} />
+            <ExecutiveSummary projects={projectsData} />
           </TabsContent>
 
           <TabsContent value="projects" className="space-y-6">
@@ -313,17 +324,17 @@ const Index = () => {
             
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
+                <ProjectCard key={project.id} project={project} onStatusUpdate={handleStatusUpdate} />
               ))}
             </div>
           </TabsContent>
 
           <TabsContent value="resources" className="space-y-6">
-            <ResourceOverview projects={projects} />
+            <ResourceOverview projects={projectsData} />
           </TabsContent>
 
           <TabsContent value="escalation" className="space-y-6">
-            <IssuesTracker projects={projects} />
+            <IssuesTracker projects={projectsData} />
           </TabsContent>
         </Tabs>
       </div>

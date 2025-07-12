@@ -1,40 +1,50 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from "@/components/ui/badge";
-import { User, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { User, TrendingUp, TrendingDown, Minus, Plus } from "lucide-react";
 
 interface Project {
   id: number;
   name: string;
   department: string;
   lead: string;
-  pmStatus: 'red' | 'amber' | 'green';
-  opsStatus: 'red' | 'amber' | 'green';
+  pmStatus: 'red' | 'amber' | 'green' | 'not-started';
+  opsStatus: 'red' | 'amber' | 'green' | 'not-started';
   healthTrend: 'improving' | 'declining' | 'constant';
-  pastWeeksStatus: Array<{ week: string; status: 'red' | 'amber' | 'green' }>;
+  pastWeeksStatus: Array<{ week: string; status: 'red' | 'amber' | 'green' | 'not-started' }>;
 }
 
 interface ProjectHeaderProps {
   project: Project;
+  onStatusUpdate?: (statusType: 'pmStatus' | 'opsStatus', newStatus: string) => void;
+  onWeeklyStatusAdd?: (weekStatus: { week: string; status: 'red' | 'amber' | 'green' | 'not-started' }) => void;
 }
 
 const statusConfig = {
   green: {
     color: "bg-green-500",
-    label: "On Track",
+    label: "Green",
     textColor: "text-green-700",
     bgColor: "bg-green-50",
   },
   amber: {
     color: "bg-amber-500", 
-    label: "At Risk",
+    label: "Amber",
     textColor: "text-amber-700",
     bgColor: "bg-amber-50",
   },
   red: {
     color: "bg-red-500",
-    label: "Delayed", 
+    label: "Red", 
     textColor: "text-red-700",
     bgColor: "bg-red-50",
+  },
+  "not-started": {
+    color: "bg-slate-500",
+    label: "Not Started",
+    textColor: "text-slate-700",
+    bgColor: "bg-slate-50",
   }
 };
 
@@ -56,7 +66,8 @@ const trendConfig = {
   }
 };
 
-export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project }) => {
+export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project, onStatusUpdate, onWeeklyStatusAdd }) => {
+  const [newWeekStatus, setNewWeekStatus] = useState<'red' | 'amber' | 'green' | 'not-started'>('green');
   const pmConfig = statusConfig[project.pmStatus];
   const opsConfig = statusConfig[project.opsStatus];
   const trendData = trendConfig[project.healthTrend];
@@ -101,37 +112,106 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project }) => {
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2">
             <div className="text-sm font-medium text-slate-700">PM Status</div>
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${pmConfig.bgColor} ${pmConfig.textColor}`}>
-              <div className={`w-2 h-2 rounded-full ${pmConfig.color}`}></div>
-              <span className="text-sm font-medium">{pmConfig.label}</span>
-            </div>
+            <Select value={project.pmStatus} onValueChange={(newStatus: any) => onStatusUpdate?.('pmStatus', newStatus)}>
+              <SelectTrigger className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${pmConfig.bgColor} ${pmConfig.textColor} border-none hover:bg-opacity-80 w-auto`}>
+                <div className={`w-2 h-2 rounded-full ${pmConfig.color}`}></div>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="green">Green</SelectItem>
+                <SelectItem value="amber">Amber</SelectItem>
+                <SelectItem value="red">Red</SelectItem>
+                <SelectItem value="not-started">Not Started</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-2">
             <div className="text-sm font-medium text-slate-700">Ops Status</div>
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${opsConfig.bgColor} ${opsConfig.textColor}`}>
-              <div className={`w-2 h-2 rounded-full ${opsConfig.color}`}></div>
-              <span className="text-sm font-medium">{opsConfig.label}</span>
-            </div>
+            <Select value={project.opsStatus} onValueChange={(newStatus: any) => onStatusUpdate?.('opsStatus', newStatus)}>
+              <SelectTrigger className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${opsConfig.bgColor} ${opsConfig.textColor} border-none hover:bg-opacity-80 w-auto`}>
+                <div className={`w-2 h-2 rounded-full ${opsConfig.color}`}></div>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="green">Green</SelectItem>
+                <SelectItem value="amber">Amber</SelectItem>
+                <SelectItem value="red">Red</SelectItem>
+                <SelectItem value="not-started">Not Started</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        {/* Past Weeks Status */}
-        <div className="mt-6 space-y-3">
-          <div className="text-sm font-medium text-slate-700">Past 4 Weeks Status</div>
-          <div className="flex items-center gap-3">
-            {project.pastWeeksStatus.map((week, index) => (
-              <div key={index} className="flex flex-col items-center gap-1">
-                <div 
-                  className={`w-3 h-3 rounded-full border-2 border-dashed ${
-                    week.status === 'green' ? 'bg-green-500 border-green-300' :
-                    week.status === 'amber' ? 'bg-amber-500 border-amber-300' :
-                    'bg-red-500 border-red-300'
-                  }`}
-                ></div>
-                <span className="text-xs text-slate-500">{week.week}</span>
-              </div>
-            ))}
+        {/* Weekly Status Management */}
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium text-slate-700">Weekly Status Management</div>
+            <Select value={newWeekStatus} onValueChange={(status: any) => setNewWeekStatus(status)}>
+              <SelectTrigger className="w-auto">
+                <Button variant="outline" size="sm" className="h-8">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Week Status
+                </Button>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="green" onClick={() => onWeeklyStatusAdd?.({ week: `Week-${project.pastWeeksStatus.length + 1}`, status: 'green' })}>
+                  Green
+                </SelectItem>
+                <SelectItem value="amber" onClick={() => onWeeklyStatusAdd?.({ week: `Week-${project.pastWeeksStatus.length + 1}`, status: 'amber' })}>
+                  Amber
+                </SelectItem>
+                <SelectItem value="red" onClick={() => onWeeklyStatusAdd?.({ week: `Week-${project.pastWeeksStatus.length + 1}`, status: 'red' })}>
+                  Red
+                </SelectItem>
+                <SelectItem value="not-started" onClick={() => onWeeklyStatusAdd?.({ week: `Week-${project.pastWeeksStatus.length + 1}`, status: 'not-started' })}>
+                  Not Started
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((weekNum) => {
+              const weekData = project.pastWeeksStatus.find(w => w.week === `Week-${weekNum}`);
+              return (
+                <div key={weekNum} className="space-y-2">
+                  <div className="text-xs font-medium text-slate-600">Week-{weekNum}</div>
+                  {weekData ? (
+                    <div 
+                      className={`w-6 h-6 rounded-full border-2 border-dashed ${
+                        weekData.status === 'green' ? 'bg-green-500 border-green-300' :
+                        weekData.status === 'amber' ? 'bg-amber-500 border-amber-300' :
+                        weekData.status === 'red' ? 'bg-red-500 border-red-300' :
+                        'bg-slate-500 border-slate-300'
+                      }`}
+                    ></div>
+                  ) : (
+                    <div className="w-6 h-6 rounded-full border-2 border-dashed border-slate-200 bg-slate-50"></div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Past 4 Weeks Status (Display) */}
+          <div className="space-y-3">
+            <div className="text-sm font-medium text-slate-700">Past 4 Weeks Status</div>
+            <div className="flex items-center gap-3">
+              {project.pastWeeksStatus.slice(-4).map((week, index) => (
+                <div key={index} className="flex flex-col items-center gap-1">
+                  <div 
+                    className={`w-3 h-3 rounded-full border-2 border-dashed ${
+                      week.status === 'green' ? 'bg-green-500 border-green-300' :
+                      week.status === 'amber' ? 'bg-amber-500 border-amber-300' :
+                      week.status === 'red' ? 'bg-red-500 border-red-300' :
+                      'bg-slate-500 border-slate-300'
+                    }`}
+                  ></div>
+                  <span className="text-xs text-slate-500">{week.week}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
