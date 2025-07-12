@@ -179,15 +179,24 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project, onStatusU
                   <div className="text-xs font-medium text-slate-600">Week-{weekNum}</div>
                   {weekData ? (
                     <div 
-                      className={`w-6 h-6 rounded-full border-2 border-dashed ${
+                      className={`w-6 h-6 rounded-full border-2 border-dashed cursor-pointer hover:scale-110 transition-transform ${
                         weekData.status === 'green' ? 'bg-green-500 border-green-300' :
                         weekData.status === 'amber' ? 'bg-amber-500 border-amber-300' :
                         weekData.status === 'red' ? 'bg-red-500 border-red-300' :
                         'bg-slate-500 border-slate-300'
                       }`}
+                      onClick={() => {
+                        const statusCycle: ('green' | 'amber' | 'red' | 'not-started')[] = ['green', 'amber', 'red', 'not-started'];
+                        const currentIndex = statusCycle.indexOf(weekData.status);
+                        const nextStatus = statusCycle[(currentIndex + 1) % statusCycle.length];
+                        onStatusUpdate?.('pmStatus', nextStatus); // Reusing the callback for weekly status
+                      }}
                     ></div>
                   ) : (
-                    <div className="w-6 h-6 rounded-full border-2 border-dashed border-slate-200 bg-slate-50"></div>
+                    <div 
+                      className="w-6 h-6 rounded-full border-2 border-dashed border-slate-200 bg-slate-50 cursor-pointer hover:scale-110 transition-transform"
+                      onClick={() => onWeeklyStatusAdd?.({ week: `Week-${weekNum}`, status: 'green' })}
+                    ></div>
                   )}
                 </div>
               );
