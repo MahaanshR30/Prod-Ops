@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResourceOverview } from "@/components/ResourceOverview";
+import { EmployeesList } from "@/components/EmployeesList";
+import { ResourceUtilization } from "@/components/ResourceUtilization";
 import { projectsAndProducts } from "@/data/projectsData";
 
 const Resources = () => {
@@ -13,7 +16,25 @@ const Resources = () => {
           <p className="text-slate-600 mt-1">Monitor and optimize resource allocation across projects</p>
         </div>
         
-        <ResourceOverview projects={projectsData} />
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="employees">Employees</TabsTrigger>
+            <TabsTrigger value="utilization">Utilization</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="mt-6">
+            <ResourceOverview projects={projectsData} />
+          </TabsContent>
+          
+          <TabsContent value="employees" className="mt-6">
+            <EmployeesList />
+          </TabsContent>
+          
+          <TabsContent value="utilization" className="mt-6">
+            <ResourceUtilization projects={projectsData} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

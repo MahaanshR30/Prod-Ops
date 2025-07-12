@@ -1,0 +1,268 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertTriangle, TrendingUp, TrendingDown, Clock } from "lucide-react";
+import { Project } from "@/data/projectsData";
+
+interface ResourceUtilizationProps {
+  projects: Project[];
+}
+
+const employeeUtilizationData = [
+  {
+    id: 1,
+    name: "Alex Thompson",
+    role: "Developer",
+    totalHours: 45,
+    allocatedHours: 40,
+    utilizationRate: 112.5,
+    status: "overworked",
+    projects: [
+      { name: "Phoenix CRM", hours: 25, type: "project" },
+      { name: "DataSync Pro", hours: 20, type: "product" }
+    ]
+  },
+  {
+    id: 2,
+    name: "Sarah Chen",
+    role: "Developer",
+    totalHours: 25,
+    allocatedHours: 40,
+    utilizationRate: 62.5,
+    status: "underworked",
+    projects: [
+      { name: "Phoenix CRM", hours: 15, type: "project" },
+      { name: "Available for assignment", hours: 10, type: "available" }
+    ]
+  },
+  {
+    id: 3,
+    name: "Emma Wilson",
+    role: "Designer",
+    totalHours: 48,
+    allocatedHours: 40,
+    utilizationRate: 120,
+    status: "overworked",
+    projects: [
+      { name: "Phoenix CRM", hours: 20, type: "project" },
+      { name: "CloudVault Enterprise", hours: 18, type: "product" },
+      { name: "DataSync Pro", hours: 10, type: "product" }
+    ]
+  },
+  {
+    id: 4,
+    name: "Mike Rodriguez",
+    role: "Developer",
+    totalHours: 38,
+    allocatedHours: 40,
+    utilizationRate: 95,
+    status: "optimal",
+    projects: [
+      { name: "CloudVault Enterprise", hours: 25, type: "product" },
+      { name: "Internal Tools", hours: 13, type: "internal" }
+    ]
+  },
+  {
+    id: 5,
+    name: "Lisa Anderson",
+    role: "QA",
+    totalHours: 30,
+    allocatedHours: 40,
+    utilizationRate: 75,
+    status: "underworked",
+    projects: [
+      { name: "Phoenix CRM", hours: 15, type: "project" },
+      { name: "DataSync Pro", hours: 15, type: "product" }
+    ]
+  },
+  {
+    id: 6,
+    name: "Rachel Green",
+    role: "PM",
+    totalHours: 42,
+    allocatedHours: 40,
+    utilizationRate: 105,
+    status: "optimal",
+    projects: [
+      { name: "Phoenix CRM", hours: 20, type: "project" },
+      { name: "CloudVault Enterprise", hours: 22, type: "product" }
+    ]
+  },
+];
+
+export const ResourceUtilization = ({ projects }: ResourceUtilizationProps) => {
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  const filteredEmployees = employeeUtilizationData.filter(employee => {
+    if (filterStatus === "all") return true;
+    return employee.status === filterStatus;
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "overworked": return "text-red-600 bg-red-50 border-red-200";
+      case "underworked": return "text-amber-600 bg-amber-50 border-amber-200";
+      case "optimal": return "text-green-600 bg-green-50 border-green-200";
+      default: return "text-slate-600 bg-slate-50 border-slate-200";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "overworked": return <TrendingUp className="h-4 w-4" />;
+      case "underworked": return <TrendingDown className="h-4 w-4" />;
+      case "optimal": return <Clock className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  const overworkedCount = employeeUtilizationData.filter(emp => emp.status === "overworked").length;
+  const underworkedCount = employeeUtilizationData.filter(emp => emp.status === "underworked").length;
+  const optimalCount = employeeUtilizationData.filter(emp => emp.status === "optimal").length;
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-red-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-slate-600">Overworked</CardTitle>
+              <AlertTriangle className="w-4 h-4 text-red-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-900">{overworkedCount}</div>
+            <p className="text-xs text-slate-600 mt-1">Exceeding allocated hours</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-slate-600">Underworked</CardTitle>
+              <TrendingDown className="w-4 h-4 text-amber-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-900">{underworkedCount}</div>
+            <p className="text-xs text-slate-600 mt-1">Below allocated capacity</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-slate-600">Optimal</CardTitle>
+              <TrendingUp className="w-4 h-4 text-green-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-900">{optimalCount}</div>
+            <p className="text-xs text-slate-600 mt-1">Balanced workload</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-slate-600">Avg Utilization</CardTitle>
+              <Clock className="w-4 h-4 text-blue-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-900">
+              {Math.round(employeeUtilizationData.reduce((sum, emp) => sum + emp.utilizationRate, 0) / employeeUtilizationData.length)}%
+            </div>
+            <p className="text-xs text-slate-600 mt-1">Team average</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filter */}
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-slate-900">Employee Utilization Details</h3>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="overworked">Overworked</SelectItem>
+            <SelectItem value="underworked">Underworked</SelectItem>
+            <SelectItem value="optimal">Optimal</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Employee Utilization Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredEmployees.map((employee) => (
+          <Card key={employee.id} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Avatar>
+                    <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${employee.name}`} />
+                    <AvatarFallback>{employee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">{employee.name}</h3>
+                    <Badge variant="secondary" className="text-xs">{employee.role}</Badge>
+                  </div>
+                </div>
+                <Badge className={`${getStatusColor(employee.status)} flex items-center gap-1`}>
+                  {getStatusIcon(employee.status)}
+                  {employee.status}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span>Utilization Rate</span>
+                  <span className="font-medium">{employee.utilizationRate}%</span>
+                </div>
+                <Progress value={Math.min(employee.utilizationRate, 150)} className="h-2" />
+                <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <span>{employee.totalHours}h used</span>
+                  <span>{employee.allocatedHours}h allocated</span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-slate-700 mb-2">Project Assignments</h4>
+                <div className="space-y-2">
+                  {employee.projects.map((project, index) => (
+                    <div key={index} className="flex justify-between items-center text-sm">
+                      <span className={`${project.type === 'available' ? 'text-amber-600' : 'text-slate-600'}`}>
+                        {project.name}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-500">{project.hours}h</span>
+                        <Badge variant="outline" className="text-xs">
+                          {project.type}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredEmployees.length === 0 && (
+        <div className="text-center py-8">
+          <Clock className="mx-auto h-12 w-12 text-slate-400" />
+          <h3 className="mt-2 text-sm font-medium text-slate-900">No employees found</h3>
+          <p className="mt-1 text-sm text-slate-500">Try adjusting your filter criteria.</p>
+        </div>
+      )}
+    </div>
+  );
+};
