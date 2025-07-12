@@ -61,15 +61,15 @@ const mockProjects = [
     opsStatus: "red" as const,
     healthTrend: "declining" as const,
     monthlyDeliverables: [
-      { id: 1, task: "Database Schema Migration", dueDate: "2024-07-12", comments: "Delayed due to complexity", description: "Migrate database schema to new version", type: "bug", assignee: "Alex Chen", department: "Development", status: "red" },
-      { id: 2, task: "Third-party API Testing", dueDate: "2024-07-18", comments: "Dependencies blocking progress", description: "Test integration with third-party APIs", type: "feature-request", assignee: "Sarah Wilson", department: "QA", status: "amber" },
-      { id: 3, task: "Security Audit", dueDate: "2024-07-22", comments: "Scheduled for next week", description: "Comprehensive security audit", type: "adhoc", assignee: "David Kim", department: "PM", status: "green" }
+      { id: 1, task: "Database Schema Migration", dueDate: "2024-07-12", comments: "Delayed due to complexity", description: "Migrate database schema to new version", type: "bug", assignee: "Alex Chen", department: "Development", status: "red" as const },
+      { id: 2, task: "Third-party API Testing", dueDate: "2024-07-18", comments: "Dependencies blocking progress", description: "Test integration with third-party APIs", type: "feature-request", assignee: "Sarah Wilson", department: "QA", status: "amber" as const },
+      { id: 3, task: "Security Audit", dueDate: "2024-07-22", comments: "Scheduled for next week", description: "Comprehensive security audit", type: "adhoc", assignee: "David Kim", department: "PM", status: "green" as const }
     ],
     pastWeeksStatus: [
-      { week: "Week 1", status: "amber" },
-      { week: "Week 2", status: "red" },
-      { week: "Week 3", status: "red" },
-      { week: "Week 4", status: "amber" }
+      { week: "Week 1", status: "amber" as const },
+      { week: "Week 2", status: "red" as const },
+      { week: "Week 3", status: "red" as const },
+      { week: "Week 4", status: "amber" as const }
     ]
   },
   {
@@ -91,15 +91,15 @@ const mockProjects = [
     opsStatus: "red" as const,
     healthTrend: "constant" as const,
     monthlyDeliverables: [
-      { id: 1, task: "Data Pipeline Setup", dueDate: "2024-07-14", comments: "Major technical challenges", description: "Set up data pipeline infrastructure", type: "new-feature", assignee: "Emily Rodriguez", department: "Development", status: "red" },
-      { id: 2, task: "Report Generation Module", dueDate: "2024-07-21", comments: "Waiting for data pipeline", description: "Develop report generation functionality", type: "feature-request", assignee: "Tom Brown", department: "Development", status: "red" },
-      { id: 3, task: "User Interface Development", dueDate: "2024-07-28", comments: "Resource constraints", description: "Build user interface components", type: "new-feature", assignee: "Lisa Chen", department: "Design", status: "amber" }
+      { id: 1, task: "Data Pipeline Setup", dueDate: "2024-07-14", comments: "Major technical challenges", description: "Set up data pipeline infrastructure", type: "new-feature", assignee: "Emily Rodriguez", department: "Development", status: "red" as const },
+      { id: 2, task: "Report Generation Module", dueDate: "2024-07-21", comments: "Waiting for data pipeline", description: "Develop report generation functionality", type: "feature-request", assignee: "Tom Brown", department: "Development", status: "red" as const },
+      { id: 3, task: "User Interface Development", dueDate: "2024-07-28", comments: "Resource constraints", description: "Build user interface components", type: "new-feature", assignee: "Lisa Chen", department: "Design", status: "amber" as const }
     ],
     pastWeeksStatus: [
-      { week: "Week 1", status: "red" },
-      { week: "Week 2", status: "red" },
-      { week: "Week 3", status: "red" },
-      { week: "Week 4", status: "red" }
+      { week: "Week 1", status: "red" as const },
+      { week: "Week 2", status: "red" as const },
+      { week: "Week 3", status: "red" as const },
+      { week: "Week 4", status: "red" as const }
     ]
   },
   {
@@ -121,15 +121,15 @@ const mockProjects = [
     opsStatus: "green" as const,
     healthTrend: "improving" as const,
     monthlyDeliverables: [
-      { id: 1, task: "Security Policy Updates", dueDate: "2024-07-16", comments: "Nearly complete", description: "Update security policies and procedures", type: "adhoc", assignee: "David Park", department: "PM", status: "green" },
-      { id: 2, task: "Vulnerability Assessment", dueDate: "2024-07-19", comments: "Scheduled for this week", description: "Conduct vulnerability assessment", type: "adhoc", assignee: "Security Team", department: "QA", status: "green" },
-      { id: 3, task: "Compliance Documentation", dueDate: "2024-07-24", comments: "Ready for review", description: "Prepare compliance documentation", type: "feature-request", assignee: "Compliance Team", department: "PM", status: "green" }
+      { id: 1, task: "Security Policy Updates", dueDate: "2024-07-16", comments: "Nearly complete", description: "Update security policies and procedures", type: "adhoc", assignee: "David Park", department: "PM", status: "green" as const },
+      { id: 2, task: "Vulnerability Assessment", dueDate: "2024-07-19", comments: "Scheduled for this week", description: "Conduct vulnerability assessment", type: "adhoc", assignee: "Security Team", department: "QA", status: "green" as const },
+      { id: 3, task: "Compliance Documentation", dueDate: "2024-07-24", comments: "Ready for review", description: "Prepare compliance documentation", type: "feature-request", assignee: "Compliance Team", department: "PM", status: "green" as const }
     ],
     pastWeeksStatus: [
-      { week: "Week 1", status: "green" },
-      { week: "Week 2", status: "green" },
-      { week: "Week 3", status: "green" },
-      { week: "Week 4", status: "green" }
+      { week: "Week 1", status: "green" as const },
+      { week: "Week 2", status: "green" as const },
+      { week: "Week 3", status: "green" as const },
+      { week: "Week 4", status: "green" as const }
     ]
   },
   {
@@ -151,15 +151,15 @@ const mockProjects = [
     opsStatus: "amber" as const,
     healthTrend: "constant" as const,
     monthlyDeliverables: [
-      { id: 1, task: "Email Campaign Builder", dueDate: "2024-07-17", comments: "Feature complete, testing needed", description: "Build email campaign creation tool", type: "new-feature", assignee: "Jessica Wu", department: "Development", status: "amber" },
-      { id: 2, task: "Analytics Dashboard", dueDate: "2024-07-23", comments: "UI development in progress", description: "Create analytics dashboard", type: "feature-request", assignee: "Marketing Team", department: "Design", status: "amber" },
-      { id: 3, task: "Integration Testing", dueDate: "2024-07-26", comments: "Planned after feature completion", description: "Test system integrations", type: "adhoc", assignee: "QA Team", department: "QA", status: "green" }
+      { id: 1, task: "Email Campaign Builder", dueDate: "2024-07-17", comments: "Feature complete, testing needed", description: "Build email campaign creation tool", type: "new-feature", assignee: "Jessica Wu", department: "Development", status: "amber" as const },
+      { id: 2, task: "Analytics Dashboard", dueDate: "2024-07-23", comments: "UI development in progress", description: "Create analytics dashboard", type: "feature-request", assignee: "Marketing Team", department: "Design", status: "amber" as const },
+      { id: 3, task: "Integration Testing", dueDate: "2024-07-26", comments: "Planned after feature completion", description: "Test system integrations", type: "adhoc", assignee: "QA Team", department: "QA", status: "green" as const }
     ],
     pastWeeksStatus: [
-      { week: "Week 1", status: "green" },
-      { week: "Week 2", status: "amber" },
-      { week: "Week 3", status: "amber" },
-      { week: "Week 4", status: "amber" }
+      { week: "Week 1", status: "green" as const },
+      { week: "Week 2", status: "amber" as const },
+      { week: "Week 3", status: "amber" as const },
+      { week: "Week 4", status: "amber" as const }
     ]
   }
 ];
@@ -222,7 +222,7 @@ const ProjectDetail: React.FC = () => {
       monthlyDeliverables: [...project.monthlyDeliverables, newTask]
     };
     
-    setProjectData(updatedProject);
+    setProjectData(updatedProject as any);
   };
 
   const handleTaskClick = (task: any) => {
