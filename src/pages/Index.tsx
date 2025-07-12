@@ -201,82 +201,84 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-l-4 border-l-blue-500">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-600">Total Projects</CardTitle>
-                <TrendingUp className="w-4 h-4 text-blue-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">{totalProjects}</div>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span className="text-xs text-slate-600">{greenCount} On Track</span>
+        {/* Key Metrics Cards - Only show on overview tab */}
+        {activeTab === "overview" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="border-l-4 border-l-blue-500">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-slate-600">Total Projects</CardTitle>
+                  <TrendingUp className="w-4 h-4 text-blue-500" />
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                  <span className="text-xs text-slate-600">{amberCount} At Risk</span>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-slate-900">{totalProjects}</div>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span className="text-xs text-slate-600">{greenCount} On Track</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                    <span className="text-xs text-slate-600">{amberCount} At Risk</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                    <span className="text-xs text-slate-600">{redCount} Delayed</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span className="text-xs text-slate-600">{redCount} Delayed</span>
+              </CardContent>
+            </Card>
+
+            <Card className="border-l-4 border-l-green-500">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-slate-600">Deliverables Progress</CardTitle>
+                  <Calendar className="w-4 h-4 text-green-500" />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-slate-900">
+                  {completedDeliverables}/{totalDeliverables}
+                </div>
+                <Progress value={(completedDeliverables / totalDeliverables) * 100} className="mt-2" />
+                <p className="text-xs text-slate-600 mt-1">
+                  {Math.round((completedDeliverables / totalDeliverables) * 100)}% Complete
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card className="border-l-4 border-l-green-500">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-600">Deliverables Progress</CardTitle>
-                <Calendar className="w-4 h-4 text-green-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">
-                {completedDeliverables}/{totalDeliverables}
-              </div>
-              <Progress value={(completedDeliverables / totalDeliverables) * 100} className="mt-2" />
-              <p className="text-xs text-slate-600 mt-1">
-                {Math.round((completedDeliverables / totalDeliverables) * 100)}% Complete
-              </p>
-            </CardContent>
-          </Card>
+            <Card className="border-l-4 border-l-amber-500">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-slate-600">Active Blockers</CardTitle>
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-slate-900">{totalBlockers}</div>
+                <p className="text-xs text-slate-600 mt-2">Requiring immediate attention</p>
+              </CardContent>
+            </Card>
 
-          <Card className="border-l-4 border-l-amber-500">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-600">Active Blockers</CardTitle>
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">{totalBlockers}</div>
-              <p className="text-xs text-slate-600 mt-2">Requiring immediate attention</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-purple-500">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-slate-600">Resource Utilization</CardTitle>
-                <Users className="w-4 h-4 text-purple-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">
-                {Math.round((projectsData.reduce((sum, p) => sum + p.hoursUsed, 0) / projectsData.reduce((sum, p) => sum + p.hoursAllocated, 0)) * 100)}%
-              </div>
-              <p className="text-xs text-slate-600 mt-2">
-                {projectsData.reduce((sum, p) => sum + p.hoursUsed, 0)}h / {projectsData.reduce((sum, p) => sum + p.hoursAllocated, 0)}h allocated
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card className="border-l-4 border-l-purple-500">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-slate-600">Resource Utilization</CardTitle>
+                  <Users className="w-4 h-4 text-purple-500" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-slate-900">
+                  {Math.round((projectsData.reduce((sum, p) => sum + p.hoursUsed, 0) / projectsData.reduce((sum, p) => sum + p.hoursAllocated, 0)) * 100)}%
+                </div>
+                <p className="text-xs text-slate-600 mt-2">
+                  {projectsData.reduce((sum, p) => sum + p.hoursUsed, 0)}h / {projectsData.reduce((sum, p) => sum + p.hoursAllocated, 0)}h allocated
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Main Content based on active tab */}
         <div className="space-y-6">
