@@ -262,7 +262,7 @@ const ProjectDetail: React.FC = () => {
     } as any);
   };
 
-  const handleTaskStatusUpdate = (taskId: number, newStatus: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed') => {
+  const handleTaskStatusUpdate = (taskId: number, newStatus: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed' | 'done') => {
     if (!project) return;
     const updatedTasks = project.monthlyDeliverables.map(task => 
       task.id === taskId ? { ...task, status: newStatus } : task

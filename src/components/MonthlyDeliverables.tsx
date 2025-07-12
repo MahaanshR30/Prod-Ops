@@ -19,7 +19,7 @@ interface Task {
   type: string;
   assignee: string;
   department: string;
-  status: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed';
+  status: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed' | 'done';
   flagged?: boolean;
 }
 
@@ -27,7 +27,7 @@ interface MonthlyDeliverablesProps {
   tasks: Task[];
   onAddTask: (task: any) => void;
   onTaskClick: (task: Task) => void;
-  onTaskStatusUpdate?: (taskId: number, newStatus: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed') => void;
+  onTaskStatusUpdate?: (taskId: number, newStatus: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed' | 'done') => void;
   selectedTask: Task | null;
   isTaskDetailOpen: boolean;
   setIsTaskDetailOpen: (open: boolean) => void;
@@ -63,6 +63,12 @@ const statusConfig = {
     label: "De-Comm",
     textColor: "text-purple-700",
     bgColor: "bg-purple-50",
+  },
+  "done": {
+    color: "bg-blue-500",
+    label: "Done",
+    textColor: "text-blue-700",
+    bgColor: "bg-blue-50",
   }
 };
 
@@ -241,6 +247,7 @@ export const MonthlyDeliverables: React.FC<MonthlyDeliverablesProps> = ({
                             <SelectItem value="red">Red</SelectItem>
                             <SelectItem value="not-started">Not Started</SelectItem>
                             <SelectItem value="de-committed">De-Committed</SelectItem>
+                            <SelectItem value="done">Done</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
