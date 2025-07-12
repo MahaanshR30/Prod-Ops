@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Plus, ChevronLeft, ChevronRight, Filter, Flag, Eye } from "lucide-react";
 import { AddTaskForm } from './AddTaskForm';
 import { TaskFilters } from './TaskFilters';
@@ -18,7 +19,7 @@ interface Task {
   type: string;
   assignee: string;
   department: string;
-  status: 'red' | 'amber' | 'green';
+  status: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed';
   flagged?: boolean;
 }
 
@@ -26,6 +27,7 @@ interface MonthlyDeliverablesProps {
   tasks: Task[];
   onAddTask: (task: any) => void;
   onTaskClick: (task: Task) => void;
+  onTaskStatusUpdate?: (taskId: number, newStatus: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed') => void;
   selectedTask: Task | null;
   isTaskDetailOpen: boolean;
   setIsTaskDetailOpen: (open: boolean) => void;
@@ -49,6 +51,18 @@ const statusConfig = {
     label: "Red", 
     textColor: "text-red-700",
     bgColor: "bg-red-50",
+  },
+  "not-started": {
+    color: "bg-slate-500",
+    label: "Not Started",
+    textColor: "text-slate-700",
+    bgColor: "bg-slate-50",
+  },
+  "de-committed": {
+    color: "bg-purple-500",
+    label: "De-Committed",
+    textColor: "text-purple-700",
+    bgColor: "bg-purple-50",
   }
 };
 
@@ -56,6 +70,7 @@ export const MonthlyDeliverables: React.FC<MonthlyDeliverablesProps> = ({
   tasks,
   onAddTask,
   onTaskClick,
+  onTaskStatusUpdate,
   selectedTask,
   isTaskDetailOpen,
   setIsTaskDetailOpen
@@ -210,10 +225,24 @@ export const MonthlyDeliverables: React.FC<MonthlyDeliverablesProps> = ({
                         {new Date(task.dueDate).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${statusConf.bgColor} ${statusConf.textColor}`}>
-                          <div className={`w-2 h-2 rounded-full ${statusConf.color}`}></div>
-                          <span className="text-xs font-medium">{statusConf.label}</span>
-                        </div>
+                        <Select
+                          value={task.status}
+                          onValueChange={(newStatus: any) => {
+                            onTaskStatusUpdate?.(task.id, newStatus);
+                          }}
+                        >
+                          <SelectTrigger className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border-none ${statusConf.bgColor} ${statusConf.textColor} hover:bg-opacity-80 w-auto h-auto`}>
+                            <div className={`w-2 h-2 rounded-full ${statusConf.color}`}></div>
+                            <SelectValue className="text-xs font-medium" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="green">Green</SelectItem>
+                            <SelectItem value="amber">Amber</SelectItem>
+                            <SelectItem value="red">Red</SelectItem>
+                            <SelectItem value="not-started">Not Started</SelectItem>
+                            <SelectItem value="de-committed">De-Committed</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
