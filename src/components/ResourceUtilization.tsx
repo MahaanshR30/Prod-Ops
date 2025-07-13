@@ -5,10 +5,28 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, TrendingUp, TrendingDown, Clock } from "lucide-react";
-import { Project } from "@/data/projectsData";
+import { useProjects } from "@/hooks/useProjects";
+import { useEmployees } from "@/hooks/useEmployees";
 
-interface ResourceUtilizationProps {
-  projects: Project[];
+interface Project {
+  id: number;
+  name: string;
+  type: "Projects" | "Products";
+  status: "green" | "amber" | "red";
+  progress: number;
+  dueDate: string;
+  department: string;
+  lead: string;
+  deliverables: number;
+  completedDeliverables: number;
+  blockers: number;
+  teamSize: number;
+  hoursAllocated: number;
+  hoursUsed: number;
+  lastCallDate: string;
+  pmStatus: "green" | "amber" | "red";
+  opsStatus: "green" | "amber" | "red";
+  healthTrend: "improving" | "declining" | "constant";
 }
 
 const employeeUtilizationData = [
@@ -93,8 +111,32 @@ const employeeUtilizationData = [
   },
 ];
 
-export const ResourceUtilization = ({ projects }: ResourceUtilizationProps) => {
+export const ResourceUtilization = () => {
+  const { projects, loading: projectsLoading } = useProjects();
+  const { employees, loading: employeesLoading } = useEmployees();
   const [filterStatus, setFilterStatus] = useState("all");
+
+  // Transform Supabase projects to legacy format
+  const transformedProjects: Project[] = projects.map(project => ({
+    id: Number(project.id.slice(-6)),
+    name: project.name,
+    type: "Projects" as const,
+    status: project.status as "green" | "amber" | "red",
+    progress: project.progress,
+    dueDate: project.end_date || '',
+    department: project.manager?.department || 'Unknown',
+    lead: project.manager?.full_name || 'Unassigned',
+    deliverables: 0,
+    completedDeliverables: 0,
+    blockers: 0,
+    teamSize: 0,
+    hoursAllocated: 0,
+    hoursUsed: 0,
+    lastCallDate: '',
+    pmStatus: project.status as "green" | "amber" | "red",
+    opsStatus: project.status as "green" | "amber" | "red",
+    healthTrend: "constant" as const
+  }));
 
   const filteredEmployees = employeeUtilizationData.filter(employee => {
     if (filterStatus === "all") return true;
@@ -122,6 +164,10 @@ export const ResourceUtilization = ({ projects }: ResourceUtilizationProps) => {
   const overworkedCount = employeeUtilizationData.filter(emp => emp.status === "overworked").length;
   const underworkedCount = employeeUtilizationData.filter(emp => emp.status === "underworked").length;
   const optimalCount = employeeUtilizationData.filter(emp => emp.status === "optimal").length;
+
+  if (projectsLoading || employeesLoading) {
+    return <div className="p-6 text-center">Loading utilization data...</div>;
+  }
 
   return (
     <div className="space-y-6">

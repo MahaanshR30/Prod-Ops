@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { MonthlyDeliverables } from '@/components/MonthlyDeliverables';
 import { ExecutiveSummary } from '@/components/ExecutiveSummary';
 import { ResourceOverview } from '@/components/ResourceOverview';
 import { IssuesTracker } from '@/components/IssuesTracker';
-import { projectsAndProducts, getProjectById, type Project } from '@/data/projectsData';
+import { useProjects } from '@/hooks/useProjects';
 
 // Navigation tabs configuration
 const getNavigationTabs = (projectData: any) => [
@@ -39,37 +39,41 @@ const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { projects, loading } = useProjects();
   const [activeTab, setActiveTab] = useState('project');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
-  const [currentProject, setCurrentProject] = useState<Project | null>(() => 
-    getProjectById(parseInt(id || '0')) || null
-  );
   
-  const project = currentProject;
+  // Find project from Supabase data
+  const currentProject = projects.find(p => p.id.slice(-6) === id?.padStart(6, '0'));
+  
+  // Transform to legacy format if found
+  const project = currentProject ? {
+    id: Number(currentProject.id.slice(-6)),
+    name: currentProject.name,
+    type: "Projects" as const,
+    status: currentProject.status as "green" | "amber" | "red",
+    progress: currentProject.progress,
+    dueDate: currentProject.end_date || '',
+    department: currentProject.manager?.department || 'Unknown',
+    lead: currentProject.manager?.full_name || 'Unassigned',
+    deliverables: 0,
+    completedDeliverables: 0,
+    blockers: 0,
+    teamSize: 0,
+    hoursAllocated: 0,
+    hoursUsed: 0,
+    lastCallDate: currentProject.created_at.split('T')[0],
+    pmStatus: currentProject.status as "green" | "amber" | "red",
+    opsStatus: currentProject.status as "green" | "amber" | "red",
+    healthTrend: "constant" as const,
+    monthlyDeliverables: [],
+    pastWeeksStatus: []
+  } : null;
 
   const handleAddTask = (taskData: any) => {
-    if (!project) return;
-    
-    const newTask = {
-      id: project.monthlyDeliverables.length + 1,
-      task: taskData.task,
-      dueDate: taskData.dueDate.toISOString().split('T')[0],
-      comments: taskData.comments || "",
-      description: taskData.description,
-      type: taskData.type,
-      assignee: taskData.assignee,
-      department: taskData.department,
-      status: 'green' as const,
-      flagged: false
-    };
-    
-    const updatedProject = {
-      ...project,
-      monthlyDeliverables: [...project.monthlyDeliverables, newTask]
-    };
-    
-    setCurrentProject(updatedProject as any);
+    // This would need to create a new deliverable in Supabase
+    console.log('Add task:', taskData);
   };
 
   const handleTaskClick = (task: any) => {
@@ -82,58 +86,43 @@ const ProjectDetail: React.FC = () => {
   };
 
   const handleStatusUpdate = (statusType: 'pmStatus' | 'opsStatus', newStatus: string) => {
-    if (!project) return;
-    setCurrentProject({
-      ...project,
-      [statusType]: newStatus
-    } as any);
+    // This would need to update the project status in Supabase
+    console.log('Update status:', statusType, newStatus);
   };
 
   const handleWeeklyStatusAdd = (weekStatus: { week: string; status: 'red' | 'amber' | 'green' | 'not-started' }) => {
-    if (!project) return;
-    setCurrentProject({
-      ...project,
-      pastWeeksStatus: [...project.pastWeeksStatus, weekStatus]
-    } as any);
+    // This would need to create a status entry in Supabase
+    console.log('Add weekly status:', weekStatus);
   };
-
   const handleWeeklyStatusUpdate = (week: string, newStatus: 'red' | 'amber' | 'green' | 'not-started') => {
-    if (!project) return;
-    const updatedWeeklyStatus = project.pastWeeksStatus.map(weekData => 
-      weekData.week === week ? { ...weekData, status: newStatus } : weekData
-    );
-    setCurrentProject({
-      ...project,
-      pastWeeksStatus: updatedWeeklyStatus
-    } as any);
+    // This would need to update the status entry in Supabase
+    console.log('Update weekly status:', week, newStatus);
   };
 
   const handleTaskStatusUpdate = (taskId: number, newStatus: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed' | 'done') => {
-    if (!project) return;
-    const updatedTasks = project.monthlyDeliverables.map(task => 
-      task.id === taskId ? { ...task, status: newStatus } : task
-    );
-    setCurrentProject({
-      ...project,
-      monthlyDeliverables: updatedTasks
-    } as any);
+    // This would need to update the deliverable status in Supabase
+    console.log('Update task status:', taskId, newStatus);
   };
 
   const handleLeadUpdate = (newLead: string) => {
-    if (!project) return;
-    setCurrentProject({
-      ...project,
-      lead: newLead
-    } as any);
+    // This would need to update the project manager in Supabase
+    console.log('Update lead:', newLead);
   };
 
   const handleLastCallDateUpdate = (date: Date) => {
-    if (!project) return;
-    setCurrentProject({
-      ...project,
-      lastCallDate: date.toISOString().split('T')[0]
-    });
+    // This would need to update the project in Supabase
+    console.log('Update last call date:', date);
   };
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center">Loading project details...</div>
+        </div>
+      </div>
+    );
+  }
   
   if (!project) {
     return (

@@ -91,7 +91,7 @@ const Resources = () => {
           </TabsContent>
           
           <TabsContent value="utilization" className="mt-6">
-            <ResourceUtilization projects={transformedProjects} />
+            <ResourceUtilization />
           </TabsContent>
         </Tabs>
       </div>

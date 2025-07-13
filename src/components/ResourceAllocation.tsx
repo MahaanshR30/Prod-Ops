@@ -8,7 +8,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { User, Code, Palette, Bug, Target, Users, Settings, Server, Headphones, Trash2, ChevronLeft, ChevronRight, Save, Edit, FileText, Download } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { projectsAndProducts } from "@/data/projectsData";
+import { useProjects } from "@/hooks/useProjects";
+import { useEmployees } from "@/hooks/useEmployees";
 
 interface Employee {
   id: string;
@@ -34,35 +35,10 @@ interface ProjectStatus {
   };
 }
 
-// Mock employees data
-const mockEmployees: Employee[] = [
-  { id: '1', name: 'John Doe', email: 'john@company.com', role: 'Senior Developer', department: 'Developer', skills: ['React', 'TypeScript', 'Node.js'] },
-  { id: '2', name: 'Jane Smith', email: 'jane@company.com', role: 'UI/UX Designer', department: 'Designer', skills: ['Figma', 'Adobe XD', 'Sketch'] },
-  { id: '3', name: 'Mike Johnson', email: 'mike@company.com', role: 'QA Engineer', department: 'QA', skills: ['Selenium', 'Jest', 'Cypress'] },
-  { id: '4', name: 'Sarah Wilson', email: 'sarah@company.com', role: 'Project Manager', department: 'PM', skills: ['Agile', 'Scrum', 'Jira'] },
-  { id: '5', name: 'Alex Brown', email: 'alex@company.com', role: 'DevOps Engineer', department: 'Devops', skills: ['Docker', 'Kubernetes', 'AWS'] },
-  { id: '6', name: 'Lisa Garcia', email: 'lisa@company.com', role: 'Frontend Developer', department: 'Developer', skills: ['Vue.js', 'CSS', 'JavaScript'] },
-  { id: '7', name: 'Tom Davis', email: 'tom@company.com', role: 'Backend Developer', department: 'Developer', skills: ['Python', 'Django', 'PostgreSQL'] },
-  { id: '8', name: 'Emma Wilson', email: 'emma@company.com', role: 'Product Designer', department: 'Designer', skills: ['User Research', 'Prototyping', 'Design Systems'] },
-];
-
-const departmentIcons = {
-  Developer: Code,
-  Designer: Palette,
-  QA: Bug,
-  PM: Target,
-  HR: Users,
-  Ops: Settings,
-  Admin: Settings,
-  Devops: Server,
-  'L1 support': Headphones,
-};
-
-const allocationOptions = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-
 export const ResourceAllocation = () => {
   const { toast } = useToast();
-  const [employees] = useState<Employee[]>(mockEmployees);
+  const { projects, loading: projectsLoading } = useProjects();
+  const { employees, loading: employeesLoading } = useEmployees();
   const [projectAllocations, setProjectAllocations] = useState<ProjectAllocation>({});
   const [projectStatus, setProjectStatus] = useState<ProjectStatus>({});
   const [isEmployeeListOpen, setIsEmployeeListOpen] = useState(false);
@@ -84,7 +60,7 @@ export const ResourceAllocation = () => {
     // Only handle drops onto project cards
     if (destination.droppableId.startsWith('project-')) {
       const projectId = destination.droppableId.replace('project-', '');
-      const employee = employees.find(emp => emp.id === draggableId);
+      const employee = transformedEmployees.find(emp => emp.id === draggableId);
       
       if (employee) {
         const newAllocatedEmployee: AllocatedEmployee = {
@@ -169,7 +145,7 @@ export const ResourceAllocation = () => {
 
   // Generate utilization report based on actual project deliverables
   const generateUtilizationReport = () => {
-    const utilizationData = employees.map(employee => {
+    const utilizationData = transformedEmployees.map(employee => {
       const totalAllocation = getEmployeeTotalAllocation(employee.id);
       
       // Get projects this employee is allocated to
@@ -179,12 +155,10 @@ export const ResourceAllocation = () => {
         )
         .map(([projectId, projectEmployees]) => {
           const allocation = projectEmployees.find(emp => emp.id === employee.id)?.allocation || 0;
-          const project = projectsAndProducts.find(p => p.id.toString() === projectId);
+          const project = transformedProjects.find(p => p.id.toString() === projectId);
           
           // Count deliverables assigned to this employee
-          const assignedDeliverables = project?.monthlyDeliverables?.filter(
-            deliverable => deliverable.assignee === employee.name
-          ).length || 0;
+          const assignedDeliverables = 0; // This would need to be calculated from actual deliverables
           
           return {
             projectName: project?.name || 'Unknown Project',
@@ -245,20 +219,48 @@ export const ResourceAllocation = () => {
     });
   };
 
+  const departmentIcons = {
+    Developer: Code,
+    Designer: Palette,
+    QA: Bug,
+    PM: Target,
+    HR: Users,
+    Ops: Settings,
+    Admin: Settings,
+    Devops: Server,
+    'L1 support': Headphones,
+  };
+
+  const allocationOptions = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+  // Transform Supabase data to match component interface
+  const transformedEmployees: Employee[] = employees.map(emp => ({
+    id: emp.id,
+    name: emp.profile?.full_name || 'Unknown',
+    email: emp.profile?.email || `${emp.profile?.full_name?.toLowerCase().replace(' ', '.')}@company.com`,
+    role: emp.position || 'Unknown',
+    department: emp.department || 'Unknown',
+    skills: emp.skills || []
+  }));
+
+  const transformedProjects = projects.map(project => ({
+    id: Number(project.id.slice(-6)),
+    name: project.name,
+    type: "Projects" as const,
+    status: project.status as "green" | "amber" | "red",
+    progress: project.progress,
+    teamSize: 5, // This would need calculation from assignments
+    deliverableAssignees: [] // This would need to be calculated from deliverables
+  }));
+
   // Sync with actual project deliverables data
   const syncedProjects = useMemo(() => {
-    return projectsAndProducts.map(project => {
-      // Get employees assigned to deliverables
-      const deliverableAssignees = project.monthlyDeliverables
-        ?.map(deliverable => deliverable.assignee)
-        .filter(Boolean) || [];
-      
-      return {
-        ...project,
-        deliverableAssignees: [...new Set(deliverableAssignees)] // Remove duplicates
-      };
-    });
-  }, [projectsAndProducts]);
+    return transformedProjects;
+  }, [transformedProjects]);
+
+  if (projectsLoading || employeesLoading) {
+    return <div className="p-6 text-center">Loading resource data...</div>;
+  }
 
   return (
     <TooltipProvider>
@@ -458,7 +460,7 @@ export const ResourceAllocation = () => {
                     {...provided.droppableProps}
                     className="p-2 space-y-2 overflow-y-auto max-h-full"
                   >
-                    {employees.map((employee, index) => {
+                    {transformedEmployees.map((employee, index) => {
                       const IconComponent = getDepartmentIcon(employee.department);
                       
                       return (
