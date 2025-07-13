@@ -95,16 +95,28 @@ export const useProjects = () => {
 
   const fetchProjects = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: projectsData, error } = await supabase
         .from('projects')
-        .select(`
-          *,
-          manager:employees!manager_id(full_name, department)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProjects(data || []);
+
+      // Fetch managers separately to avoid relationship issues
+      const managerIds = projectsData?.map(p => p.manager_id).filter(Boolean) || [];
+      const { data: managersData } = await supabase
+        .from('employees')
+        .select('id, full_name, department')
+        .in('id', managerIds);
+
+      const managersMap = new Map(managersData?.map(m => [m.id, m]) || []);
+
+      const projectsWithManagers = projectsData?.map(project => ({
+        ...project,
+        manager: project.manager_id ? managersMap.get(project.manager_id) : null
+      })) || [];
+
+      setProjects(projectsWithManagers);
     } catch (err) {
       console.error('Error fetching projects:', err);
       setError('Unable to load projects. Please check your connection and try again.');
@@ -113,31 +125,29 @@ export const useProjects = () => {
 
   const fetchTasks = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: tasksData, error } = await supabase
         .from('tasks')
-        .select(`
-          *,
-          assignee:employees!assigned_to(
-            id,
-            employee_id,
-            full_name,
-            email,
-            avatar_url,
-            department
-          ),
-          project:projects(name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Transform the data to flatten the nested structure
-      const transformedTasks = data?.map(task => ({
+
+      // Fetch projects and employees separately
+      const projectIds = tasksData?.map(t => t.project_id).filter(Boolean) || [];
+      const employeeIds = tasksData?.map(t => t.assigned_to).filter(Boolean) || [];
+
+      const [{ data: projectsData }, { data: employeesData }] = await Promise.all([
+        supabase.from('projects').select('id, name').in('id', projectIds),
+        supabase.from('employees').select('id, full_name, department').in('id', employeeIds)
+      ]);
+
+      const projectsMap = new Map(projectsData?.map(p => [p.id, p]) || []);
+      const employeesMap = new Map(employeesData?.map(e => [e.id, e]) || []);
+
+      const transformedTasks = tasksData?.map(task => ({
         ...task,
-        assignee: task.assignee ? {
-          full_name: task.assignee.full_name || 'Unknown',
-          department: task.assignee.department || 'Unknown'
-        } : null
+        assignee: task.assigned_to ? employeesMap.get(task.assigned_to) : null,
+        project: task.project_id ? projectsMap.get(task.project_id) : null
       })) || [];
       
       setTasks(transformedTasks);
@@ -149,38 +159,32 @@ export const useProjects = () => {
 
   const fetchIssues = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: issuesData, error } = await supabase
         .from('issues')
-        .select(`
-          *,
-          reporter:employees!reported_by(
-            id,
-            employee_id,
-            full_name,
-            email,
-            avatar_url
-          ),
-          assignee:employees!assigned_to(
-            id,
-            employee_id,
-            full_name,
-            email,
-            avatar_url
-          ),
-          project:projects(name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Fetch projects and employees separately
+      const projectIds = issuesData?.map(i => i.project_id).filter(Boolean) || [];
+      const reporterIds = issuesData?.map(i => i.reported_by).filter(Boolean) || [];
+      const assigneeIds = issuesData?.map(i => i.assigned_to).filter(Boolean) || [];
+      const allEmployeeIds = [...new Set([...reporterIds, ...assigneeIds])];
+
+      const [{ data: projectsData }, { data: employeesData }] = await Promise.all([
+        supabase.from('projects').select('id, name').in('id', projectIds),
+        supabase.from('employees').select('id, full_name').in('id', allEmployeeIds)
+      ]);
+
+      const projectsMap = new Map(projectsData?.map(p => [p.id, p]) || []);
+      const employeesMap = new Map(employeesData?.map(e => [e.id, e]) || []);
       
-      const transformedIssues = data?.map(issue => ({
+      const transformedIssues = issuesData?.map(issue => ({
         ...issue,
-        reporter: issue.reporter ? {
-          full_name: issue.reporter.full_name || 'Unknown'
-        } : null,
-        assignee: issue.assignee ? {
-          full_name: issue.assignee.full_name || 'Unknown'
-        } : null
+        reporter: issue.reported_by ? employeesMap.get(issue.reported_by) : null,
+        assignee: issue.assigned_to ? employeesMap.get(issue.assigned_to) : null,
+        project: issue.project_id ? projectsMap.get(issue.project_id) : null
       })) || [];
       
       setIssues(transformedIssues);
@@ -192,30 +196,29 @@ export const useProjects = () => {
 
   const fetchDeliverables = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: deliverablesData, error } = await supabase
         .from('deliverables')
-        .select(`
-          *,
-          employee:employees!responsible_employee(
-            id,
-            employee_id,
-            full_name,
-            email,
-            avatar_url,
-            department
-          ),
-          project:projects(name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Fetch projects and employees separately
+      const projectIds = deliverablesData?.map(d => d.project_id).filter(Boolean) || [];
+      const employeeIds = deliverablesData?.map(d => d.responsible_employee).filter(Boolean) || [];
+
+      const [{ data: projectsData }, { data: employeesData }] = await Promise.all([
+        supabase.from('projects').select('id, name').in('id', projectIds),
+        supabase.from('employees').select('id, full_name, department').in('id', employeeIds)
+      ]);
+
+      const projectsMap = new Map(projectsData?.map(p => [p.id, p]) || []);
+      const employeesMap = new Map(employeesData?.map(e => [e.id, e]) || []);
       
-      const transformedDeliverables = data?.map(deliverable => ({
+      const transformedDeliverables = deliverablesData?.map(deliverable => ({
         ...deliverable,
-        employee: deliverable.employee ? {
-          full_name: deliverable.employee.full_name || 'Unknown',
-          department: deliverable.employee.department || 'Unknown'
-        } : null
+        employee: deliverable.responsible_employee ? employeesMap.get(deliverable.responsible_employee) : null,
+        project: deliverable.project_id ? projectsMap.get(deliverable.project_id) : null
       })) || [];
       
       setDeliverables(transformedDeliverables);
