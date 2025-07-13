@@ -8,7 +8,7 @@ import { Users, Clock, TrendingUp, Zap } from "lucide-react";
 interface Project {
   id: string;
   name: string;
-  status: "green" | "amber" | "red";
+  status: "green" | "amber" | "red" | "not-started";
   progress: number;
   dueDate: string;
   department: string;

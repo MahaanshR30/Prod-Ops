@@ -8,7 +8,7 @@ import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle } from "lucide-rea
 interface Project {
   id: string;
   name: string;
-  status: "green" | "amber" | "red";
+  status: "green" | "amber" | "red" | "not-started";
   progress: number;
   dueDate: string;
   department: string;

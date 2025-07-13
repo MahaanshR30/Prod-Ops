@@ -125,10 +125,10 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project, onStatusU
     return 'constant';
   };
 
-  const pmConfig = statusConfig[project.pmStatus];
-  const opsConfig = statusConfig[project.opsStatus];
+  const pmConfig = statusConfig[project.pmStatus] || statusConfig["not-started"];
+  const opsConfig = statusConfig[project.opsStatus] || statusConfig["not-started"];
   const calculatedTrend = calculateHealthTrend();
-  const trendData = trendConfig[calculatedTrend];
+  const trendData = trendConfig[calculatedTrend] || trendConfig["constant"];
   const TrendIcon = trendData.icon;
 
   return (

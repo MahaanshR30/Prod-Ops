@@ -48,11 +48,27 @@ const ProjectDetail: React.FC = () => {
   const currentProject = projects.find(p => p.id === id);
   
   // Transform to legacy format if found
+  const mapStatusToUIStatus = (dbStatus: string): "green" | "amber" | "red" | "not-started" => {
+    switch (dbStatus?.toLowerCase()) {
+      case 'active':
+      case 'completed':
+        return 'green';
+      case 'planning':
+      case 'pending':
+        return 'amber';
+      case 'on-hold':
+      case 'cancelled':
+        return 'red';
+      default:
+        return 'not-started';
+    }
+  };
+
   const project = currentProject ? {
     id: currentProject.id, // Use full UUID
     name: currentProject.name,
     type: "Projects" as const,
-    status: currentProject.status as "green" | "amber" | "red",
+    status: mapStatusToUIStatus(currentProject.status),
     progress: currentProject.progress,
     dueDate: currentProject.end_date || '',
     department: currentProject.manager?.department || 'Unknown',
@@ -64,8 +80,8 @@ const ProjectDetail: React.FC = () => {
     hoursAllocated: 0,
     hoursUsed: 0,
     lastCallDate: currentProject.created_at.split('T')[0],
-    pmStatus: currentProject.status as "green" | "amber" | "red",
-    opsStatus: currentProject.status as "green" | "amber" | "red",
+    pmStatus: mapStatusToUIStatus(currentProject.status),
+    opsStatus: mapStatusToUIStatus(currentProject.status),
     healthTrend: "constant" as const,
     monthlyDeliverables: [],
     pastWeeksStatus: []
