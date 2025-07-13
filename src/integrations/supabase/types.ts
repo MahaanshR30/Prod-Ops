@@ -76,10 +76,10 @@ export type Database = {
           created_at: string
           department: string | null
           employee_id: string | null
+          employee_name: string | null
           hire_date: string | null
           id: string
           position: string | null
-          profile_id: string | null
           salary: number | null
           skills: string[] | null
           status: string | null
@@ -90,10 +90,10 @@ export type Database = {
           created_at?: string
           department?: string | null
           employee_id?: string | null
+          employee_name?: string | null
           hire_date?: string | null
           id?: string
           position?: string | null
-          profile_id?: string | null
           salary?: number | null
           skills?: string[] | null
           status?: string | null
@@ -104,25 +104,17 @@ export type Database = {
           created_at?: string
           department?: string | null
           employee_id?: string | null
+          employee_name?: string | null
           hire_date?: string | null
           id?: string
           position?: string | null
-          profile_id?: string | null
           salary?: number | null
           skills?: string[] | null
           status?: string | null
           updated_at?: string
           utilization_rate?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "employees_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       issues: {
         Row: {
