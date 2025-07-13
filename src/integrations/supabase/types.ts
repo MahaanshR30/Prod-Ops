@@ -127,6 +127,63 @@ export type Database = {
           },
         ]
       }
+      employees_new: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          department: string | null
+          email: string | null
+          employee_id: string | null
+          full_name: string
+          hire_date: string | null
+          id: string
+          position: string | null
+          role: string | null
+          salary: number | null
+          skills: string[] | null
+          status: string | null
+          updated_at: string
+          user_id: string | null
+          utilization_rate: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          employee_id?: string | null
+          full_name: string
+          hire_date?: string | null
+          id?: string
+          position?: string | null
+          role?: string | null
+          salary?: number | null
+          skills?: string[] | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          utilization_rate?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          employee_id?: string | null
+          full_name?: string
+          hire_date?: string | null
+          id?: string
+          position?: string | null
+          role?: string | null
+          salary?: number | null
+          skills?: string[] | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          utilization_rate?: number | null
+        }
+        Relationships: []
+      }
       issues: {
         Row: {
           assigned_to: string | null
