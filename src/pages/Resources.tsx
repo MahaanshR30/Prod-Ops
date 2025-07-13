@@ -1,13 +1,64 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResourceOverview } from "@/components/ResourceOverview";
 import { EmployeesList } from "@/components/EmployeesList";
 import { ResourceUtilization } from "@/components/ResourceUtilization";
 import { ResourceAllocation } from "@/components/ResourceAllocation";
-import { projectsAndProducts } from "@/data/projectsData";
+import { useProjects } from "@/hooks/useProjects";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 const Resources = () => {
-  const [projectsData] = useState(projectsAndProducts);
+  const { projects, loading, error } = useProjects();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <Card className="w-64">
+          <CardContent className="flex items-center justify-center p-6">
+            <Loader2 className="h-6 w-6 animate-spin text-brand-primary mr-2" />
+            <span>Loading resources...</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <Card className="w-64">
+          <CardContent className="p-6 text-center">
+            <p className="text-red-600">Error: {error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Transform projects to match the legacy format
+  const transformedProjects = projects.map(project => ({
+    id: Number(project.id),
+    name: project.name,
+    type: "Projects" as const,
+    status: project.status as "green" | "amber" | "red",
+    progress: project.progress,
+    dueDate: project.end_date || '',
+    department: project.manager?.department || 'Unknown',
+    lead: project.manager?.full_name || 'Unassigned',
+    deliverables: 0,
+    completedDeliverables: 0,
+    blockers: 0,
+    teamSize: 0,
+    hoursAllocated: 0,
+    hoursUsed: 0,
+    lastCallDate: '',
+    pmStatus: project.status as "green" | "amber" | "red",
+    opsStatus: project.status as "green" | "amber" | "red",
+    healthTrend: "constant" as const,
+    monthlyDeliverables: [],
+    pastWeeksStatus: []
+  }));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
@@ -26,7 +77,7 @@ const Resources = () => {
           </TabsList>
           
           <TabsContent value="overview" className="mt-6">
-            <ResourceOverview projects={projectsData} />
+            <ResourceOverview projects={transformedProjects} />
           </TabsContent>
           
           <TabsContent value="employees" className="mt-6">
@@ -38,7 +89,7 @@ const Resources = () => {
           </TabsContent>
           
           <TabsContent value="utilization" className="mt-6">
-            <ResourceUtilization projects={projectsData} />
+            <ResourceUtilization projects={transformedProjects} />
           </TabsContent>
         </Tabs>
       </div>

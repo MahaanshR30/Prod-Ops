@@ -1,23 +1,48 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Users, AlertTriangle, TrendingUp, Filter } from "lucide-react";
+import { Calendar, Users, AlertTriangle, TrendingUp, Filter, Loader2 } from "lucide-react";
 import { ExecutiveSummary } from "@/components/ExecutiveSummary";
-import { projectsAndProducts } from "@/data/projectsData";
+import { useProjects } from "@/hooks/useProjects";
 
 const Overview = () => {
-  const [projectsData] = useState(projectsAndProducts);
+  const { projects, tasks, issues, deliverables, loading, error } = useProjects();
 
-  const greenCount = projectsData.filter(p => p.status === "green").length;
-  const amberCount = projectsData.filter(p => p.status === "amber").length;
-  const redCount = projectsData.filter(p => p.status === "red").length;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <Card className="w-64">
+          <CardContent className="flex items-center justify-center p-6">
+            <Loader2 className="h-6 w-6 animate-spin text-brand-primary mr-2" />
+            <span>Loading dashboard...</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  const totalProjects = projectsData.length;
-  const totalDeliverables = projectsData.reduce((sum, p) => sum + p.deliverables, 0);
-  const completedDeliverables = projectsData.reduce((sum, p) => sum + p.completedDeliverables, 0);
-  const totalBlockers = projectsData.reduce((sum, p) => sum + p.blockers, 0);
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <Card className="w-64">
+          <CardContent className="p-6 text-center">
+            <p className="text-red-600">Error: {error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const greenCount = projects.filter(p => p.status === "active").length;
+  const amberCount = projects.filter(p => p.status === "planning").length;
+  const redCount = projects.filter(p => p.status === "completed").length;
+
+  const totalProjects = projects.length;
+  const totalDeliverables = deliverables.length;
+  const completedDeliverables = deliverables.filter(d => d.status === "completed").length;
+  const totalBlockers = issues.filter(i => i.status === "open" && i.severity === "high").length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
@@ -107,17 +132,38 @@ const Overview = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">
-                {Math.round((projectsData.reduce((sum, p) => sum + p.hoursUsed, 0) / projectsData.reduce((sum, p) => sum + p.hoursAllocated, 0)) * 100)}%
+                {tasks.length > 0 ? Math.round((tasks.filter(t => t.status === "completed").length / tasks.length) * 100) : 0}%
               </div>
               <p className="text-xs text-slate-600 mt-2">
-                {projectsData.reduce((sum, p) => sum + p.hoursUsed, 0)}h / {projectsData.reduce((sum, p) => sum + p.hoursAllocated, 0)}h allocated
+                {tasks.filter(t => t.status === "completed").length} / {tasks.length} tasks completed
               </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Executive Summary */}
-        <ExecutiveSummary projects={projectsData} />
+        <ExecutiveSummary projects={projects.map(p => ({
+          id: Number(p.id),
+          name: p.name,
+          type: "Projects" as const,
+          status: p.status as "green" | "amber" | "red",
+          progress: p.progress,
+          dueDate: p.end_date || '',
+          department: p.manager?.department || 'Unknown',
+          lead: p.manager?.full_name || 'Unassigned',
+          deliverables: 0,
+          completedDeliverables: 0,
+          blockers: 0,
+          teamSize: 0,
+          hoursAllocated: 0,
+          hoursUsed: 0,
+          lastCallDate: '',
+          pmStatus: p.status as "green" | "amber" | "red",
+          opsStatus: p.status as "green" | "amber" | "red",
+          healthTrend: "constant" as const,
+          monthlyDeliverables: [],
+          pastWeeksStatus: []
+        }))} />
       </div>
     </div>
   );

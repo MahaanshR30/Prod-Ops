@@ -1,7 +1,37 @@
 import React from 'react';
 import { SeatAllocation } from "@/components/SeatAllocation";
+import { useSeats } from "@/hooks/useSeats";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 const Seats = () => {
+  const { seats, loading, error } = useSeats();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <Card className="w-64">
+          <CardContent className="flex items-center justify-center p-6">
+            <Loader2 className="h-6 w-6 animate-spin text-brand-primary mr-2" />
+            <span>Loading seats...</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
+        <Card className="w-64">
+          <CardContent className="p-6 text-center">
+            <p className="text-red-600">Error: {error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
