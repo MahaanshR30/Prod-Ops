@@ -133,7 +133,7 @@ export const SeatAllocation = () => {
                 });
               }
             }}>
-              <SelectTrigger className="w-full h-8 text-xs seamless-input">
+              <SelectTrigger className="w-full h-9 text-xs seamless-input">
                 <SelectValue placeholder="Assign Employee" />
               </SelectTrigger>
               <SelectContent className="bg-background border border-border shadow-lg z-50">
