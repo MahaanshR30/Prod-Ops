@@ -37,7 +37,7 @@ const Projects = () => {
   };
 
   // Transform projects to match the legacy format for ProjectCard component
-  const transformedProjects = projects.map(project => {
+  const transformedProjects = React.useMemo(() => projects.map(project => {
     // Calculate deliverables for this project
     const projectDeliverables = deliverables.filter(d => d.project_id === project.id);
     const completedDeliverables = projectDeliverables.filter(d => 
@@ -72,15 +72,15 @@ const Projects = () => {
       monthlyDeliverables: [],
       pastWeeksStatus: []
     };
-  });
+  }), [projects, deliverables]);
   
-  // Filter projects based on filters
-  const filteredProjects = transformedProjects.filter(project => {
+  // Filter projects based on filters - also use useMemo to prevent unnecessary re-calculations
+  const filteredProjects = React.useMemo(() => transformedProjects.filter(project => {
     if (filters.status !== "all" && project.status !== filters.status) return false;
     if (filters.department !== "all" && project.department !== filters.department) return false;
     if (filters.assignee && !project.lead?.toLowerCase().includes(filters.assignee.toLowerCase())) return false;
     return true;
-  });
+  }), [transformedProjects, filters]);
 
   if (loading) {
     return (

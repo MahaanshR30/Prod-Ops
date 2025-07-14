@@ -185,7 +185,7 @@ export const useProjects = () => {
 
       if (error) throw error;
       
-      // Update local state
+      // Update local state immediately to prevent flickering
       setProjects(prev => 
         prev.map(project => 
           project.id === projectId ? { ...project, [statusType]: status } : project
