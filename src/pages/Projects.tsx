@@ -9,9 +9,11 @@ const Projects = () => {
   const [filters, setFilters] = useState({ status: 'all', type: 'all', assignee: '', department: 'all' });
   const { projects, loading, error, updateProjectStatus, deliverables } = useProjects();
 
-  const handleStatusUpdate = async (projectId: string, statusType: 'status', newStatus: string) => {
+  const handleStatusUpdate = async (projectId: string, statusType: 'status' | 'pmStatus' | 'opsStatus', newStatus: string) => {
     try {
-      await updateProjectStatus(projectId, newStatus);
+      // Map UI status type to database field name
+      const dbStatusType = statusType === 'pmStatus' ? 'pm_status' : statusType === 'opsStatus' ? 'ops_status' : 'status';
+      await updateProjectStatus(projectId, newStatus, dbStatusType as 'status' | 'pm_status' | 'ops_status');
     } catch (err) {
       console.error('Failed to update project status:', err);
     }
@@ -64,8 +66,8 @@ const Projects = () => {
       hoursAllocated: 0,
       hoursUsed: 0,
       lastCallDate: new Date(project.updated_at).toISOString().split('T')[0],
-      pmStatus: mapStatusToUIStatus(project.pm_status),
-      opsStatus: mapStatusToUIStatus(project.ops_status),
+      pmStatus: mapStatusToUIStatus(project.pm_status || 'not-started'),
+      opsStatus: mapStatusToUIStatus(project.ops_status || 'not-started'),
       healthTrend: "constant" as const,
       monthlyDeliverables: [],
       pastWeeksStatus: []
@@ -126,11 +128,7 @@ const Projects = () => {
             <ProjectCard 
               key={project.id} 
               project={project} 
-              onStatusUpdate={(id, statusType, newStatus) => {
-                if (statusType === 'status') {
-                  handleStatusUpdate(id, 'status', newStatus);
-                }
-              }}
+              onStatusUpdate={handleStatusUpdate}
             />
           ))}
         </div>
