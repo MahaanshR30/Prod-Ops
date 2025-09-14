@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { ProjectCard } from "@/components/ProjectCard";
 import { TaskFilters } from "@/components/TaskFilters";
 import { useProjects } from "@/hooks/useProjects";
+import { useEmployees } from "@/hooks/useEmployees";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,6 +26,7 @@ const Projects = () => {
     refetch,
     issues
   } = useProjects();
+  const { employees } = useEmployees();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
@@ -153,6 +156,9 @@ const Projects = () => {
   };
   const handleFormChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+  const handleSelectChange = (name: string, value: string) => {
+    setForm({ ...form, [name]: value });
   };
   const isFormValid = form.name && form.manager_id && form.start_date && (!form.budget || !isNaN(Number(form.budget))) && (!form.start_date || !form.end_date || new Date(form.start_date) <= new Date(form.end_date));
 
@@ -326,7 +332,21 @@ const Projects = () => {
             <div><Label>Start Date</Label><Input name="start_date" type="date" value={form.start_date} onChange={handleFormChange} /></div>
             <div><Label>End Date</Label><Input name="end_date" type="date" value={form.end_date} onChange={handleFormChange} /></div>
             <div><Label>Budget</Label><Input name="budget" type="number" value={form.budget} onChange={handleFormChange} /></div>
-            <div><Label>Manager ID</Label><Input name="manager_id" value={form.manager_id} onChange={handleFormChange} /></div>
+            <div>
+              <Label>Manager</Label>
+              <Select value={form.manager_id} onValueChange={(value) => handleSelectChange('manager_id', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a manager" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.full_name} - {employee.department}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button onClick={handleAdd} disabled={isSaving || !isFormValid}>{isSaving ? 'Saving...' : 'Add Project'}</Button>
           </div>
         </DialogContent>
@@ -345,7 +365,21 @@ const Projects = () => {
             <div><Label>Start Date</Label><Input name="start_date" type="date" value={form.start_date} onChange={handleFormChange} /></div>
             <div><Label>End Date</Label><Input name="end_date" type="date" value={form.end_date} onChange={handleFormChange} /></div>
             <div><Label>Budget</Label><Input name="budget" type="number" value={form.budget} onChange={handleFormChange} /></div>
-            <div><Label>Manager ID</Label><Input name="manager_id" value={form.manager_id} onChange={handleFormChange} /></div>
+            <div>
+              <Label>Manager</Label>
+              <Select value={form.manager_id} onValueChange={(value) => handleSelectChange('manager_id', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a manager" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.full_name} - {employee.department}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button onClick={handleEdit} disabled={isSaving || !isFormValid}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
           </div>
         </DialogContent>
