@@ -27,6 +27,19 @@ class KekaApiService {
   private tokenExpiry: number | null = null;
 
   private getConfig(): KekaOAuthConfig | null {
+    // Try to get from environment variables first (for local development)
+    const envConfig = {
+      clientId: import.meta.env.KEKA_CLIENT_ID,
+      clientSecret: import.meta.env.KEKA_CLIENT_SECRET,
+      apiKey: import.meta.env.KEKA_API_KEY
+    };
+
+    // If all env vars are present, use them
+    if (envConfig.clientId && envConfig.clientSecret && envConfig.apiKey) {
+      return envConfig;
+    }
+
+    // Otherwise, fall back to localStorage
     const config = localStorage.getItem('keka-api-config');
     return config ? JSON.parse(config) : null;
   }
