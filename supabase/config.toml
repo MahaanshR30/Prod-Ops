@@ -38,3 +38,6 @@ otp_expiry = 86400
 
 [auth.sms]
 enable_signup = false
+
+[functions.keka-projects]
+verify_jwt = false
