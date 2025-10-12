@@ -9,7 +9,6 @@ import { MonthlyDeliverables } from '@/components/MonthlyDeliverables';
 import { ExecutiveSummary } from '@/components/ExecutiveSummary';
 import { ResourceOverview } from '@/components/ResourceOverview';
 import { IssuesTracker } from '@/components/IssuesTracker';
-import { useProjects } from '@/hooks/useProjects';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,13 +40,71 @@ const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { projects, loading, deliverables, refetch } = useProjects();
+  
+  // State for data
+  const [projects, setProjects] = useState([]);
+  const [deliverables, setDeliverables] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
   const [activeTab, setActiveTab] = useState('project');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
   const [weeklyStatuses, setWeeklyStatuses] = useState<any[]>([]);
   const [lastCallDate, setLastCallDate] = useState<Date | null>(null);
   const { toast } = useToast();
+
+  // Data fetching functions
+  const fetchProjectsData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          manager:employees!projects_manager_id_fkey(
+            full_name,
+            department
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+    }
+  };
+
+  const fetchDeliverablesData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('deliverables')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDeliverables(data || []);
+    } catch (err) {
+      console.error('Error fetching deliverables:', err);
+    }
+  };
+
+  const refetch = () => {
+    fetchProjectsData();
+    fetchDeliverablesData();
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchProjectsData(),
+        fetchDeliverablesData()
+      ]);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
   
   // Find project from Supabase data using full UUID
   const currentProject = projects.find(p => p.id === id);

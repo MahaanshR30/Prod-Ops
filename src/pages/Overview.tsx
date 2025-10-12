@@ -5,15 +5,114 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Calendar, Users, AlertTriangle, TrendingUp, Filter, Loader2, Zap } from "lucide-react";
 import { ExecutiveSummary } from "@/components/ExecutiveSummary";
-import { useProjects } from "@/hooks/useProjects";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { ResourceOverview } from "@/components/ResourceOverview";
 
 const Overview = () => {
-  const { projects, tasks, issues, deliverables, loading, error } = useProjects();
+  // State for data
+  const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [issues, setIssues] = useState([]);
+  const [deliverables, setDeliverables] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const [allocations, setAllocations] = useState([]);
   const [dbConnectionStatus, setDbConnectionStatus] = useState<'connected' | 'disconnected'>('connected');
+
+  // Data fetching functions
+  const fetchProjectsData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          manager:employees!projects_manager_id_fkey(
+            full_name,
+            department
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+      setError('Failed to load projects');
+    }
+  };
+
+  const fetchTasksData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(`
+          *,
+          assignee:employees!tasks_assigned_to_fkey(
+            full_name,
+            department
+          ),
+          project:projects!tasks_project_id_fkey(
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTasks(data || []);
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+    }
+  };
+
+  const fetchIssuesData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('issues')
+        .select(`
+          *,
+          project:projects!issues_project_id_fkey(
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setIssues(data || []);
+    } catch (err) {
+      console.error('Error fetching issues:', err);
+    }
+  };
+
+  const fetchDeliverablesData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('deliverables')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDeliverables(data || []);
+    } catch (err) {
+      console.error('Error fetching deliverables:', err);
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchProjectsData(),
+        fetchTasksData(),
+        fetchIssuesData(),
+        fetchDeliverablesData()
+      ]);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
 
   const addSampleData = async () => {
     try {

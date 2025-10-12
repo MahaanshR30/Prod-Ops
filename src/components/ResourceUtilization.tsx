@@ -5,8 +5,6 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, TrendingUp, TrendingDown, Clock } from "lucide-react";
-import { useProjects } from "@/hooks/useProjects";
-import { useEmployees } from "@/hooks/useEmployees";
 import { supabase } from '@/integrations/supabase/client';
 
 interface Project {
@@ -31,10 +29,53 @@ interface Project {
 }
 
 export const ResourceUtilization = () => {
-  const { projects, loading: projectsLoading } = useProjects();
-  const { employees, loading: employeesLoading } = useEmployees();
+  // State for data
+  const [projects, setProjects] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [employeesLoading, setEmployeesLoading] = useState(true);
+  
   const [filterStatus, setFilterStatus] = useState("all");
   const [allocations, setAllocations] = useState<any[]>([]);
+
+  // Data fetching functions
+  const fetchProjectsData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          manager:employees!projects_manager_id_fkey(
+            full_name,
+            department
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  const fetchEmployeesData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (err) {
+      console.error('Error fetching employees:', err);
+    } finally {
+      setEmployeesLoading(false);
+    }
+  };
 
   // Fetch allocations from Supabase
   React.useEffect(() => {
@@ -42,7 +83,16 @@ export const ResourceUtilization = () => {
       const { data, error } = await supabase.from('allocations').select('*');
       if (!error && data) setAllocations(data);
     };
-    fetchAllocations();
+    
+    const loadData = async () => {
+      await Promise.all([
+        fetchProjectsData(),
+        fetchEmployeesData(),
+        fetchAllocations()
+      ]);
+    };
+    
+    loadData();
   }, []);
 
   // Calculate utilization for each employee

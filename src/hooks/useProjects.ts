@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getCachedKekaProjects } from '@/services/kekaApi';
 
 export interface Project {
   id: string;
@@ -267,6 +268,26 @@ export const useProjects = () => {
     loadData();
   }, []);
 
+  // Function to sync projects from Keka cache
+  const syncKekaProjects = async () => {
+    try {
+      const kekaProjects = getCachedKekaProjects();
+      if (!kekaProjects.length) {
+        console.log('No Keka projects found in cache');
+        return;
+      }
+
+      console.log(`Syncing ${kekaProjects.length} Keka projects...`);
+      
+      // This could be expanded to update existing projects or sync specific fields
+      // For now, just log the available Keka projects
+      console.log('Available Keka projects:', kekaProjects);
+      
+    } catch (error) {
+      console.error('Error syncing Keka projects:', error);
+    }
+  };
+
   return {
     projects,
     tasks,
@@ -282,6 +303,7 @@ export const useProjects = () => {
     },
     updateProjectStatus,
     addProject,
-    editProject
+    editProject,
+    syncKekaProjects
   };
 };

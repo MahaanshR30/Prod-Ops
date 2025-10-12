@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProjectCard } from "@/components/ProjectCard";
 import { TaskFilters } from "@/components/TaskFilters";
-import { useProjects } from "@/hooks/useProjects";
-import { useEmployees } from "@/hooks/useEmployees";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, AlertTriangle, Settings, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,24 +9,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-
-import { kekaApiService, type KekaProject } from "@/services/kekaApi";
+import { fetchProjects } from '@/services/kekaApi';
 
 const Projects = () => {
   const [filters, setFilters] = useState({ status: 'all', type: 'all', assignee: '', department: 'all' });
-  // Only call useProjects once and destructure all needed values
-  const {
-    projects,
-    loading,
-    error,
-    updateProjectStatus,
-    deliverables,
-    addProject,
-    editProject,
-    refetch,
-    issues
-  } = useProjects();
-  const { employees } = useEmployees();
+  
+  // State for projects data
+  const [projects, setProjects] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [deliverables, setDeliverables] = useState([]);
+  const [issues, setIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
@@ -48,6 +40,139 @@ const Projects = () => {
   
   const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
+
+  // Mock data functions (no Supabase integration)
+  const fetchProjectsData = async () => {
+    try {
+      setLoading(true);
+      // Mock projects data
+      const projectResponse = await fetchProjects();
+      setProjects(projectResponse);
+    } catch (err) {
+      console.error('Error loading mock projects:', err);
+      setError('Failed to load projects');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEmployeesData = async () => {
+    try {
+      // Mock employees data
+      const mockEmployees = [
+        {
+          id: 'emp1',
+          full_name: 'John Doe',
+          email: 'john@company.com',
+          department: 'Engineering',
+          position: 'Senior Developer',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: 'emp2',
+          full_name: 'Jane Smith',
+          email: 'jane@company.com',
+          department: 'Product',
+          position: 'Product Manager',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+      setEmployees(mockEmployees);
+    } catch (err) {
+      console.error('Error loading mock employees:', err);
+    }
+  };
+
+  const fetchDeliverablesData = async () => {
+    try {
+      // Mock deliverables data
+      setDeliverables([]);
+    } catch (err) {
+      console.error('Error loading mock deliverables:', err);
+    }
+  };
+
+  const fetchIssuesData = async () => {
+    try {
+      // Mock issues data
+      setIssues([]);
+    } catch (err) {
+      console.error('Error loading mock issues:', err);
+    }
+  };
+
+  const updateProjectStatus = async (projectId: string, newStatus: string, statusType: 'status' | 'pm_status' | 'ops_status') => {
+    try {
+      // Update local state only
+      setProjects(prev => 
+        prev.map(project => 
+          project.id === projectId ? { ...project, [statusType]: newStatus } : project
+        )
+      );
+    } catch (err) {
+      console.error('Error updating project status:', err);
+      throw err;
+    }
+  };
+
+  const addProject = async (projectData: any) => {
+    try {
+      // Create new project with mock ID
+      const newProject = {
+        ...projectData,
+        id: Date.now().toString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        manager: employees.find(emp => emp.id === projectData.manager_id) || null
+      };
+      
+      // Add to local state
+      setProjects(prev => [newProject, ...prev]);
+      return newProject;
+    } catch (err) {
+      console.error('Error adding project:', err);
+      throw err;
+    }
+  };
+
+  const editProject = async (projectId: string, updates: any) => {
+    try {
+      // Update local state only
+      const updatedProject = {
+        ...updates,
+        id: projectId,
+        updated_at: new Date().toISOString()
+      };
+      
+      setProjects(prev => 
+        prev.map(project => 
+          project.id === projectId ? { ...project, ...updatedProject } : project
+        )
+      );
+      return updatedProject;
+    } catch (err) {
+      console.error('Error editing project:', err);
+      throw err;
+    }
+  };
+
+  const refetch = () => {
+    fetchProjectsData();
+    fetchDeliverablesData();
+    fetchIssuesData();
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchProjectsData();
+    fetchEmployeesData();
+    fetchDeliverablesData();
+    fetchIssuesData();
+  }, []);
 
   const handleStatusUpdate = async (projectId: string, statusType: 'status' | 'pmStatus' | 'opsStatus', newStatus: string) => {
     try {
@@ -269,7 +394,8 @@ const Projects = () => {
 
     setIsImporting(true);
     try {
-      const kekaProjects = await kekaApiService.fetchProjects();
+      const kekaProjects = await fetchProjects();
+      console.log("Keka projects", kekaProjects);
       let importedCount = 0;
 
       for (const kekaProject of kekaProjects) {
