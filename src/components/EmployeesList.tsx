@@ -7,16 +7,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Users, Mail, Phone, Loader2, Plus, Trash2, Edit2 } from "lucide-react";
+import { Search, Users, Mail, Phone, Loader2, Plus, Trash2, Edit2, Download } from "lucide-react";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
+// Safely extract a display string from a field that may be a raw JSON object string
+// e.g. '{"identifier":"...","title":"Admin"}' → "Admin"
+function safeStr(val: string | null | undefined): string {
+  if (!val) return '';
+  try {
+    const parsed = JSON.parse(val);
+    if (parsed && typeof parsed === 'object') return parsed.title ?? parsed.name ?? '';
+  } catch {}
+  return val;
+}
+
+function getInitials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
 
 export const EmployeesList = () => {
   const { employees, loading, error, refetch } = useEmployees();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("All");
+  const [selectedDepartment, setSelectedDepartment] = useState("All");
+  const [selectedStatus, setSelectedStatus] = useState("active");
+  const [selectedUtilization, setSelectedUtilization] = useState("All");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
@@ -31,6 +49,7 @@ export const EmployeesList = () => {
   const [editEmployee, setEditEmployee] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [allocations, setAllocations] = useState([]);
 
   // Fetch allocations from Supabase
@@ -72,21 +91,39 @@ export const EmployeesList = () => {
     );
   }
 
-  // Get unique roles from employees data
-  const roleCategories = ["All", ...new Set(employees.map(emp => emp.position))];
+  // Derived filter options
+  const roleCategories  = ["All", ...new Set(employees.map(emp => safeStr(emp.position)).filter(Boolean))];
+  const departments     = ["All", ...new Set(employees.map(emp => safeStr(emp.department)).filter(Boolean))];
 
   const filteredEmployees = employees.filter(employee => {
-    const name = employee.full_name || '';
-    const email = employee.email || '';
-    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === "All" || employee.position === selectedRole;
-    return matchesSearch && matchesRole;
+    const name       = employee.full_name || '';
+    const email      = employee.email || '';
+    const position   = safeStr(employee.position);
+    const department = safeStr(employee.department);
+    const utilization = getEmployeeUtilization(employee.id);
+    const status     = employee.status ?? 'active';
+
+    const matchesSearch  = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole    = selectedRole === "All" || position === selectedRole;
+    const matchesDept    = selectedDepartment === "All" || department === selectedDepartment;
+    const matchesStatus  = selectedStatus === "All" || status === selectedStatus;
+    const matchesUtil    =
+      selectedUtilization === "All"         ? true :
+      selectedUtilization === "unallocated" ? utilization === 0 :
+      selectedUtilization === "low"         ? utilization > 0 && utilization < 60 :
+      selectedUtilization === "optimal"     ? utilization >= 60 && utilization <= 100 :
+      selectedUtilization === "over"        ? utilization > 100 : true;
+
+    return matchesSearch && matchesRole && matchesDept && matchesStatus && matchesUtil;
   });
 
   const getEmployeeCountByRole = (role: string) => {
-    return employees.filter(emp => emp.position === role).length;
+    return employees.filter(emp => safeStr(emp.position) === role).length;
   };
+
+  const activeCount   = employees.filter(e => (e.status ?? 'active') === 'active').length;
+  const inactiveCount = employees.filter(e => e.status === 'inactive').length;
 
   const handleAddEmployee = async () => {
     if (!newEmployee.name || !newEmployee.position || !newEmployee.department) {
@@ -146,8 +183,9 @@ export const EmployeesList = () => {
     setEditEmployee({
       ...employee,
       name: employee.full_name,
-      salary: employee.salary?.toString() || '',
-      skills: employee.skills?.join(', ') || ''
+      position: safeStr(employee.position),
+      department: safeStr(employee.department),
+      skills: Array.isArray(employee.skills) ? employee.skills : [],
     });
     setIsEditDialogOpen(true);
   };
@@ -208,25 +246,44 @@ export const EmployeesList = () => {
     }
   };
 
+  const handleImportFromKeka = async () => {
+    setIsImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('keka-employees');
+      if (error) throw new Error(error.message);
+      if (!data.success) throw new Error(data.error ?? 'Unknown error from Keka');
+      toast({
+        title: "Import complete",
+        description: `${data.inserted} added · ${data.updated} updated · ${data.skipped} skipped (${data.total} total from Keka).`,
+      });
+      refetch();
+    } catch (err: any) {
+      toast({ title: "Import failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <Card className="text-center">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Employees</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{employees.length}</div>
-          </CardContent>
-        </Card>
-        {roleCategories.slice(1, 6).map((role) => (
-          <Card key={role} className="text-center">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-600">{role}</CardTitle>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total',    value: employees.length, onClick: () => setSelectedStatus("All"),      active: selectedStatus === "All"      },
+          { label: 'Active',   value: activeCount,       onClick: () => setSelectedStatus("active"),   active: selectedStatus === "active"   },
+          { label: 'Inactive', value: inactiveCount,     onClick: () => setSelectedStatus("inactive"), active: selectedStatus === "inactive" },
+          { label: 'Showing',  value: filteredEmployees.length, onClick: undefined, active: false },
+        ].map(({ label, value, onClick, active }) => (
+          <Card
+            key={label}
+            className={`text-center transition-all ${onClick ? 'cursor-pointer hover:shadow-md' : ''} ${active ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`}
+            onClick={onClick}
+          >
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">{getEmployeeCountByRole(role)}</div>
+            <CardContent className="pb-4">
+              <div className="text-2xl font-bold text-slate-900">{value}</div>
             </CardContent>
           </Card>
         ))}
@@ -238,7 +295,12 @@ export const EmployeesList = () => {
           <h2 className="text-xl font-semibold">Team Members</h2>
           <p className="text-slate-600 text-sm">{employees.length} employees total</p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleImportFromKeka} disabled={isImporting}>
+            {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            Import from Keka
+          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -326,167 +388,262 @@ export const EmployeesList = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[180px]">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <Input
-            placeholder="Search employees..."
+            placeholder="Search name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-9"
           />
         </div>
-        <Select value={selectedRole} onValueChange={setSelectedRole}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Filter by role" />
+
+        {/* <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+          <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
+            <SelectValue placeholder="Department" />
           </SelectTrigger>
           <SelectContent>
-            {roleCategories.map((role) => (
-              <SelectItem key={role} value={role}>{role}</SelectItem>
-            ))}
+            {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+          </SelectContent>
+        </Select> */}
+
+        <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
+            <SelectValue placeholder="Role / Position" />
+          </SelectTrigger>
+          <SelectContent>
+            {roleCategories.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
           </SelectContent>
         </Select>
+
+        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={selectedUtilization} onValueChange={setSelectedUtilization}>
+          <SelectTrigger className="w-full sm:w-40 h-9 text-sm">
+            <SelectValue placeholder="Utilization" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All utilization</SelectItem>
+            <SelectItem value="unallocated">Unallocated (0%)</SelectItem>
+            <SelectItem value="low">Low (&lt;60%)</SelectItem>
+            <SelectItem value="optimal">Optimal (60–100%)</SelectItem>
+            <SelectItem value="over">Over-allocated (&gt;100%)</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {(searchTerm || selectedRole !== "All" || selectedDepartment !== "All" || selectedStatus !== "active" || selectedUtilization !== "All") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 text-slate-500 hover:text-slate-800"
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedRole('All');
+              setSelectedDepartment('All');
+              setSelectedStatus('active');
+              setSelectedUtilization('All');
+            }}
+          >
+            Reset
+          </Button>
+        )}
       </div>
 
       {/* Employees Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredEmployees.map((employee) => (
-          <Card key={employee.id} className="hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={employee.avatar_url} alt={employee.full_name} />
-                  <AvatarFallback>
-                    {employee.full_name?.split(' ').map(n => n[0]).join('') || 'NA'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <CardTitle className="text-lg">{employee.full_name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{employee.position}</p>
-                </div>
-                <Badge variant={employee.status === "active" ? "default" : "secondary"}>
-                  {employee.status}
-                </Badge>
-                <Button size="icon" variant="ghost" onClick={() => handleEditEmployee(employee)}><Edit2 className="w-4 h-4" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => handleDeleteEmployee(employee.id)} disabled={isDeleting}><Trash2 className="w-4 h-4 text-red-500" /></Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">{employee.department}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">{employee.email || 'No email'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">ID: {employee.employee_id}</span>
-              </div>
-              {employee.skills && employee.skills.length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-2">
-                  {employee.skills.slice(0, 3).map((skill, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
-                  {employee.skills.length > 3 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{employee.skills.length - 3} more
-                    </Badge>
-                  )}
-                </div>
-              )}
-              <div className="pt-2 border-t">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-muted-foreground">Utilization</span>
-                  <span className="text-sm font-medium">{getEmployeeUtilization(employee.id)}%</span>
-                </div>
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${getEmployeeUtilization(employee.id)}%` }}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {filteredEmployees.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">
+          <Users className="mx-auto h-10 w-10 mb-2" />
+          <p className="text-sm">No employees found. Try adjusting your search or filter.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredEmployees.map((employee) => {
+            const position   = safeStr(employee.position);
+            const department = safeStr(employee.department);
+            const utilization = getEmployeeUtilization(employee.id);
+            return (
+              <Card key={employee.id} className="hover:shadow-md transition-shadow duration-200">
+                <CardContent className="p-4">
+                  {/* Header row */}
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarImage src={employee.avatar_url ?? undefined} alt={employee.full_name} />
+                      <AvatarFallback className="bg-blue-50 text-blue-700 font-medium text-sm">
+                        {getInitials(employee.full_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-slate-900 truncate">{employee.full_name}</p>
+                      {position && <p className="text-xs text-slate-500 truncate">{position}</p>}
+                      {department && <p className="text-xs text-slate-400 truncate">{department}</p>}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Badge
+                        className={`text-xs border-0 ${employee.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-600'}`}
+                      >
+                        {employee.status ?? 'active'}
+                      </Badge>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleEditEmployee(employee)}>
+                        <Edit2 className="w-3 h-3 text-slate-400" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDeleteEmployee(employee.id)} disabled={isDeleting}>
+                        <Trash2 className="w-3 h-3 text-red-400" />
+                      </Button>
+                    </div>
+                  </div>
 
-      {filteredEmployees.length === 0 && (
-        <div className="text-center py-8">
-          <Users className="mx-auto h-12 w-12 text-slate-400" />
-          <h3 className="mt-2 text-sm font-medium text-slate-900">No employees found</h3>
-          <p className="mt-1 text-sm text-slate-500">Try adjusting your search or filter criteria.</p>
+                  {/* Details */}
+                  <div className="mt-3 space-y-1.5 text-xs text-slate-500">
+                    {employee.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{employee.email}</span>
+                      </div>
+                    )}
+                    {employee.employee_id && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5 shrink-0" />
+                        <span>ID: {employee.employee_id}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Skills */}
+                  {employee.skills && employee.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-3">
+                      {employee.skills.slice(0, 3).map((skill, i) => (
+                        <Badge key={i} variant="outline" className="text-xs px-1.5 py-0 h-5">{skill}</Badge>
+                      ))}
+                      {employee.skills.length > 3 && (
+                        <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">+{employee.skills.length - 3}</Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Utilization */}
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-500">Utilization</span>
+                      <span className={`font-medium ${utilization > 100 ? 'text-red-500' : utilization > 80 ? 'text-amber-500' : 'text-slate-700'}`}>
+                        {utilization}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${utilization > 100 ? 'bg-red-500' : utilization > 80 ? 'bg-amber-400' : 'bg-green-500'}`}
+                        style={{ width: `${Math.min(utilization, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
       {/* Edit Employee Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Employee</DialogTitle>
           </DialogHeader>
           {editEmployee && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-name">Full Name *</Label>
-                <Input id="edit-name" value={editEmployee.name} onChange={e => setEditEmployee({ ...editEmployee, name: e.target.value })} />
+            <div className="space-y-4 pt-1">
+              {/* Name + Employee ID */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <Label htmlFor="edit-name">Full Name *</Label>
+                  <Input
+                    id="edit-name"
+                    value={editEmployee.name}
+                    onChange={e => setEditEmployee({ ...editEmployee, name: e.target.value })}
+                    placeholder="Full name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-position">Position *</Label>
+                  <Input
+                    id="edit-position"
+                    value={safeStr(editEmployee.position)}
+                    onChange={e => setEditEmployee({ ...editEmployee, position: e.target.value })}
+                    placeholder="e.g. Senior Developer"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-department">Department *</Label>
+                  <Input
+                    id="edit-department"
+                    value={safeStr(editEmployee.department)}
+                    onChange={e => setEditEmployee({ ...editEmployee, department: e.target.value })}
+                    placeholder="e.g. Engineering"
+                  />
+                </div>
               </div>
+
               <div>
                 <Label htmlFor="edit-email">Email</Label>
-                <Input id="edit-email" value={editEmployee.email || ''} onChange={e => setEditEmployee({ ...editEmployee, email: e.target.value })} />
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editEmployee.email || ''}
+                  onChange={e => setEditEmployee({ ...editEmployee, email: e.target.value })}
+                  placeholder="work@company.com"
+                />
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="edit-hire-date">Hire Date</Label>
+                  <Input
+                    id="edit-hire-date"
+                    type="date"
+                    value={editEmployee.hire_date || ''}
+                    onChange={e => setEditEmployee({ ...editEmployee, hire_date: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-status">Status</Label>
+                  <Select
+                    value={editEmployee.status || 'active'}
+                    onValueChange={v => setEditEmployee({ ...editEmployee, status: v })}
+                  >
+                    <SelectTrigger id="edit-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div>
-                <Label htmlFor="edit-position">Position *</Label>
-                <Input id="edit-position" value={editEmployee.position || ''} onChange={e => setEditEmployee({ ...editEmployee, position: e.target.value })} />
+                <Label htmlFor="edit-skills">Skills <span className="text-slate-400 font-normal">(comma-separated)</span></Label>
+                <Input
+                  id="edit-skills"
+                  value={Array.isArray(editEmployee.skills) ? editEmployee.skills.join(', ') : (editEmployee.skills || '')}
+                  onChange={e => setEditEmployee({ ...editEmployee, skills: e.target.value })}
+                  placeholder="React, TypeScript, Node.js"
+                />
               </div>
-              <div>
-                <Label htmlFor="edit-department">Department *</Label>
-                <Input id="edit-department" value={editEmployee.department || ''} onChange={e => setEditEmployee({ ...editEmployee, department: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="edit-salary">Salary</Label>
-                <Input id="edit-salary" type="number" value={editEmployee.salary || ''} onChange={e => setEditEmployee({ ...editEmployee, salary: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="edit-skills">Skills</Label>
-                <Input id="edit-skills" value={editEmployee.skills || ''} onChange={e => setEditEmployee({ ...editEmployee, skills: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="edit-status">Status</Label>
-                <Input id="edit-status" value={editEmployee.status || ''} onChange={e => setEditEmployee({ ...editEmployee, status: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="edit-utilization">Utilization Rate</Label>
-                <Input id="edit-utilization" type="number" value={editEmployee.utilization_rate || 0} onChange={e => setEditEmployee({ ...editEmployee, utilization_rate: Number(e.target.value) })} />
-              </div>
-              <div>
-                <Label htmlFor="edit-avatar">Avatar URL</Label>
-                <Input id="edit-avatar" value={editEmployee.avatar_url || ''} onChange={e => setEditEmployee({ ...editEmployee, avatar_url: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="edit-hire-date">Hire Date</Label>
-                <Input id="edit-hire-date" type="date" value={editEmployee.hire_date || ''} onChange={e => setEditEmployee({ ...editEmployee, hire_date: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="edit-employee-id">Employee ID</Label>
-                <Input id="edit-employee-id" value={editEmployee.employee_id || ''} onChange={e => setEditEmployee({ ...editEmployee, employee_id: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="edit-role">Role</Label>
-                <Input id="edit-role" value={editEmployee.role || ''} onChange={e => setEditEmployee({ ...editEmployee, role: e.target.value })} />
-              </div>
-              <div>
-                <Label htmlFor="edit-user-id">User ID</Label>
-                <Input id="edit-user-id" value={editEmployee.user_id || ''} onChange={e => setEditEmployee({ ...editEmployee, user_id: e.target.value })} />
-              </div>
-              <div className="flex gap-2">
+
+              <div className="flex gap-2 pt-1">
                 <Button onClick={handleUpdateEmployee} disabled={isEditing} className="flex-1">
                   {isEditing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Save Changes
