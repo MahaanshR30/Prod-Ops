@@ -126,9 +126,9 @@ export const ResourceAllocation = () => {
             </Button>
           </div>
 
-          <div className="flex gap-5">
+          <div className="flex gap-5 h-[calc(100vh-290px)] min-h-[400px]">
             {/* Projects grid */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto pr-1">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {projects.map(project => {
                   const projectAllocs = getProjectAllocations(project.id);
@@ -217,7 +217,7 @@ export const ResourceAllocation = () => {
               <Droppable droppableId="employees" isDropDisabled>
                 {provided => (
                   <div ref={provided.innerRef} {...provided.droppableProps} className="flex-1 overflow-y-auto p-2 space-y-1.5">
-                    {employees.map((emp, index) => {
+                    {employees.filter(e => e.status === 'active').map((emp, index) => {
                       const total = getEmployeeTotalAllocation(emp.id);
                       const full = total >= 100;
                       const Icon = DEPARTMENT_ICONS[emp.department ?? ''] ?? User;

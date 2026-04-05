@@ -12,6 +12,14 @@ interface Project {
   lead: string;
   deliverables: number;
   completedDeliverables: number;
+  deliverablesByStatus?: {
+    green: number;
+    amber: number;
+    red: number;
+    'not-started': number;
+    done: number;
+    'de-committed': number;
+  };
   blockers: number;
   teamSize: number;
   hoursAllocated: number;
@@ -46,6 +54,15 @@ export const ExecutiveSummary = ({ projects }: { projects: Project[] }) => {
   const daysLeft = p.dueDate ? differenceInDays(new Date(p.dueDate), new Date()) : null;
   const formattedDue = p.dueDate ? format(new Date(p.dueDate), 'MMM d, yyyy') : '—';
   const deliverablePct = p.deliverables > 0 ? Math.round((p.completedDeliverables / p.deliverables) * 100) : 0;
+
+  const STATUS_ROWS = [
+    { key: 'done'         as const, label: 'Done',        barColor: 'bg-blue-500',   textColor: 'text-blue-700',   bg: 'bg-blue-50'   },
+    { key: 'green'        as const, label: 'On Track',    barColor: 'bg-green-500',  textColor: 'text-green-700',  bg: 'bg-green-50'  },
+    { key: 'amber'        as const, label: 'At Risk',     barColor: 'bg-amber-500',  textColor: 'text-amber-700',  bg: 'bg-amber-50'  },
+    { key: 'red'          as const, label: 'Blocked',     barColor: 'bg-red-500',    textColor: 'text-red-700',    bg: 'bg-red-50'    },
+    { key: 'not-started'  as const, label: 'Not Started', barColor: 'bg-slate-400',  textColor: 'text-slate-600',  bg: 'bg-slate-50'  },
+    { key: 'de-committed' as const, label: 'De-committed',barColor: 'bg-purple-500', textColor: 'text-purple-700', bg: 'bg-purple-50' },
+  ];
 
   return (
     <div className="space-y-5">
@@ -98,19 +115,45 @@ export const ExecutiveSummary = ({ projects }: { projects: Project[] }) => {
         />
       </div>
 
-      {/* Deliverable progress bar */}
-      <div className="p-4 bg-white rounded-xl border border-slate-100 space-y-2">
-        <div className="flex justify-between text-sm">
+      {/* Deliverable status breakdown */}
+      <div className="p-4 bg-white rounded-xl border border-slate-100 space-y-3">
+        <div className="flex justify-between text-sm mb-1">
           <span className="font-medium text-slate-700 flex items-center gap-1.5">
-            <TrendingUp className="w-4 h-4 text-slate-400" /> Deliverable Completion
+            <TrendingUp className="w-4 h-4 text-slate-400" /> Deliverable Breakdown
           </span>
-          <span className="text-slate-500">{p.completedDeliverables} of {p.deliverables} done</span>
+          <span className="text-slate-500">{p.deliverables} total · {deliverablePct}% done</span>
         </div>
-        <Progress value={deliverablePct} className="h-2" />
-        <div className="flex justify-between text-xs text-slate-400">
-          <span>{deliverablePct}% complete</span>
-          <span>{p.deliverables - p.completedDeliverables} remaining</span>
-        </div>
+
+        {p.deliverables === 0 ? (
+          <p className="text-sm text-slate-400">No deliverables added yet.</p>
+        ) : p.deliverablesByStatus ? (
+          <div className="space-y-2">
+            {STATUS_ROWS.map(({ key, label, barColor, textColor }) => {
+              const count = p.deliverablesByStatus![key] ?? 0;
+              if (count === 0) return null;
+              const pct = Math.round((count / p.deliverables) * 100);
+              return (
+                <div key={key}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className={`font-medium ${textColor}`}>{label}</span>
+                    <span className="text-slate-500">{count} ({pct}%)</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <>
+            <Progress value={deliverablePct} className="h-2" />
+            <div className="flex justify-between text-xs text-slate-400">
+              <span>{deliverablePct}% complete</span>
+              <span>{p.deliverables - p.completedDeliverables} remaining</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Blockers alert */}

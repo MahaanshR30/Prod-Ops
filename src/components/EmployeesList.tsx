@@ -32,6 +32,9 @@ export const EmployeesList = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("All");
+  const [selectedDepartment, setSelectedDepartment] = useState("All");
+  const [selectedStatus, setSelectedStatus] = useState("active");
+  const [selectedUtilization, setSelectedUtilization] = useState("All");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
@@ -88,22 +91,39 @@ export const EmployeesList = () => {
     );
   }
 
-  // Normalise position for display and filtering
-  const roleCategories = ["All", ...new Set(employees.map(emp => safeStr(emp.position)).filter(Boolean))];
+  // Derived filter options
+  const roleCategories  = ["All", ...new Set(employees.map(emp => safeStr(emp.position)).filter(Boolean))];
+  const departments     = ["All", ...new Set(employees.map(emp => safeStr(emp.department)).filter(Boolean))];
 
   const filteredEmployees = employees.filter(employee => {
-    const name = employee.full_name || '';
-    const email = employee.email || '';
-    const position = safeStr(employee.position);
-    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === "All" || position === selectedRole;
-    return matchesSearch && matchesRole;
+    const name       = employee.full_name || '';
+    const email      = employee.email || '';
+    const position   = safeStr(employee.position);
+    const department = safeStr(employee.department);
+    const utilization = getEmployeeUtilization(employee.id);
+    const status     = employee.status ?? 'active';
+
+    const matchesSearch  = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole    = selectedRole === "All" || position === selectedRole;
+    const matchesDept    = selectedDepartment === "All" || department === selectedDepartment;
+    const matchesStatus  = selectedStatus === "All" || status === selectedStatus;
+    const matchesUtil    =
+      selectedUtilization === "All"         ? true :
+      selectedUtilization === "unallocated" ? utilization === 0 :
+      selectedUtilization === "low"         ? utilization > 0 && utilization < 60 :
+      selectedUtilization === "optimal"     ? utilization >= 60 && utilization <= 100 :
+      selectedUtilization === "over"        ? utilization > 100 : true;
+
+    return matchesSearch && matchesRole && matchesDept && matchesStatus && matchesUtil;
   });
 
   const getEmployeeCountByRole = (role: string) => {
     return employees.filter(emp => safeStr(emp.position) === role).length;
   };
+
+  const activeCount   = employees.filter(e => (e.status ?? 'active') === 'active').length;
+  const inactiveCount = employees.filter(e => e.status === 'inactive').length;
 
   const handleAddEmployee = async () => {
     if (!newEmployee.name || !newEmployee.position || !newEmployee.department) {
@@ -247,22 +267,23 @@ export const EmployeesList = () => {
   return (
     <div className="space-y-6">
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <Card className="text-center">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Employees</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{employees.length}</div>
-          </CardContent>
-        </Card>
-        {roleCategories.slice(1, 6).map((role) => (
-          <Card key={role} className="text-center">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-600">{role}</CardTitle>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total',    value: employees.length, onClick: () => setSelectedStatus("All"),      active: selectedStatus === "All"      },
+          { label: 'Active',   value: activeCount,       onClick: () => setSelectedStatus("active"),   active: selectedStatus === "active"   },
+          { label: 'Inactive', value: inactiveCount,     onClick: () => setSelectedStatus("inactive"), active: selectedStatus === "inactive" },
+          { label: 'Showing',  value: filteredEmployees.length, onClick: undefined, active: false },
+        ].map(({ label, value, onClick, active }) => (
+          <Card
+            key={label}
+            className={`text-center transition-all ${onClick ? 'cursor-pointer hover:shadow-md' : ''} ${active ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`}
+            onClick={onClick}
+          >
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">{getEmployeeCountByRole(role)}</div>
+            <CardContent className="pb-4">
+              <div className="text-2xl font-bold text-slate-900">{value}</div>
             </CardContent>
           </Card>
         ))}
@@ -371,26 +392,75 @@ export const EmployeesList = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[180px]">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <Input
-            placeholder="Search employees..."
+            placeholder="Search name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-9"
           />
         </div>
-        <Select value={selectedRole} onValueChange={setSelectedRole}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Filter by role" />
+
+        {/* <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+          <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
+            <SelectValue placeholder="Department" />
           </SelectTrigger>
           <SelectContent>
-            {roleCategories.map((role) => (
-              <SelectItem key={role} value={role}>{role}</SelectItem>
-            ))}
+            {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+          </SelectContent>
+        </Select> */}
+
+        <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
+            <SelectValue placeholder="Role / Position" />
+          </SelectTrigger>
+          <SelectContent>
+            {roleCategories.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
           </SelectContent>
         </Select>
+
+        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <SelectTrigger className="w-full sm:w-36 h-9 text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={selectedUtilization} onValueChange={setSelectedUtilization}>
+          <SelectTrigger className="w-full sm:w-40 h-9 text-sm">
+            <SelectValue placeholder="Utilization" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All utilization</SelectItem>
+            <SelectItem value="unallocated">Unallocated (0%)</SelectItem>
+            <SelectItem value="low">Low (&lt;60%)</SelectItem>
+            <SelectItem value="optimal">Optimal (60–100%)</SelectItem>
+            <SelectItem value="over">Over-allocated (&gt;100%)</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {(searchTerm || selectedRole !== "All" || selectedDepartment !== "All" || selectedStatus !== "active" || selectedUtilization !== "All") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 text-slate-500 hover:text-slate-800"
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedRole('All');
+              setSelectedDepartment('All');
+              setSelectedStatus('active');
+              setSelectedUtilization('All');
+            }}
+          >
+            Reset
+          </Button>
+        )}
       </div>
 
       {/* Employees Grid */}

@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Plus, ChevronLeft, ChevronRight, Filter, Flag } from "lucide-react";
 import { AddTaskForm } from './AddTaskForm';
 import { TaskFilters } from './TaskFilters';
@@ -21,6 +22,7 @@ interface Task {
   department: string;
   status: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed' | 'done';
   flagged?: boolean;
+  flag_comment?: string;
 }
 
 interface MonthlyDeliverablesProps {
@@ -29,7 +31,7 @@ interface MonthlyDeliverablesProps {
   onAddTask: (task: any) => void;
   onTaskClick: (task: Task) => void;
   onTaskStatusUpdate?: (taskId: string, newStatus: 'red' | 'amber' | 'green' | 'not-started' | 'de-committed' | 'done') => void;
-  onTaskFlag?: (taskId: string, flagged: boolean) => void;
+  onTaskFlag?: (taskId: string, flagged: boolean, comment?: string) => void;
   selectedTask: Task | null;
   isTaskDetailOpen: boolean;
   setIsTaskDetailOpen: (open: boolean) => void;
@@ -94,6 +96,8 @@ export const MonthlyDeliverables: React.FC<MonthlyDeliverablesProps> = ({
     assignee: '',
     department: 'all'
   });
+  const [flaggingTask, setFlaggingTask] = useState<Task | null>(null);
+  const [flagComment, setFlagComment] = useState('');
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -299,7 +303,14 @@ export const MonthlyDeliverables: React.FC<MonthlyDeliverablesProps> = ({
                       {/* Flag */}
                       <TableCell className="py-3" onClick={e => e.stopPropagation()}>
                         <button
-                          onClick={() => onTaskFlag?.(task.id, !task.flagged)}
+                          onClick={() => {
+                            if (task.flagged) {
+                              onTaskFlag?.(task.id, false);
+                            } else {
+                              setFlaggingTask(task);
+                              setFlagComment('');
+                            }
+                          }}
                           className={`p-1 rounded hover:bg-slate-100 transition-colors ${task.flagged ? 'text-red-500' : 'text-slate-300 hover:text-red-400'}`}
                         >
                           <Flag className="w-3.5 h-3.5" fill={task.flagged ? 'currentColor' : 'none'} />
@@ -312,6 +323,46 @@ export const MonthlyDeliverables: React.FC<MonthlyDeliverablesProps> = ({
             </Table>
           )}
         </div>
+
+        {/* Flag comment modal */}
+        <Dialog open={!!flaggingTask} onOpenChange={open => { if (!open) setFlaggingTask(null); }}>
+          <DialogContent className="sm:max-w-[440px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-700">
+                <Flag className="w-4 h-4" fill="currentColor" /> Flag Task
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-1">
+              <p className="text-sm text-slate-600">
+                Flagging <span className="font-medium text-slate-900">"{flaggingTask?.task}"</span> will mark it for attention.
+              </p>
+              <Textarea
+                autoFocus
+                placeholder="Why is this task being flagged? (required)"
+                value={flagComment}
+                onChange={e => setFlagComment(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setFlaggingTask(null)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                disabled={!flagComment.trim()}
+                onClick={() => {
+                  if (flaggingTask) {
+                    onTaskFlag?.(flaggingTask.id, true, flagComment.trim());
+                    setFlaggingTask(null);
+                    setFlagComment('');
+                  }
+                }}
+              >
+                Flag Task
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Task Detail Side Sheet */}
         <Sheet open={isTaskDetailOpen} onOpenChange={setIsTaskDetailOpen}>
@@ -352,7 +403,14 @@ export const MonthlyDeliverables: React.FC<MonthlyDeliverablesProps> = ({
                         </div>
                       </div>
                       <button
-                        onClick={() => onTaskFlag?.(selectedTask.id, !selectedTask.flagged)}
+                        onClick={() => {
+                          if (selectedTask.flagged) {
+                            onTaskFlag?.(selectedTask.id, false);
+                          } else {
+                            setFlaggingTask(selectedTask);
+                            setFlagComment('');
+                          }
+                        }}
                         className={`p-1.5 rounded-md hover:bg-slate-100 transition-colors shrink-0 ${selectedTask.flagged ? 'text-red-500' : 'text-slate-300 hover:text-red-400'}`}
                         title={selectedTask.flagged ? 'Remove flag' : 'Flag this task'}
                       >
@@ -432,14 +490,26 @@ export const MonthlyDeliverables: React.FC<MonthlyDeliverablesProps> = ({
                       </div>
                     )}
 
-                    {/* Flag banner */}
+                    {/* Flag comment — editable when flagged */}
                     {selectedTask.flagged && (
-                      <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg">
-                        <Flag className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="currentColor" />
-                        <div>
-                          <p className="text-sm font-medium text-red-800">Flagged for attention</p>
-                          <p className="text-xs text-red-600 mt-0.5">This task has been flagged for potential delays or escalation.</p>
-                        </div>
+                      <div>
+                        <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                          <Flag className="w-3 h-3" fill="currentColor" /> Flag Reason
+                        </p>
+                        <Textarea
+                          key={selectedTask.id}
+                          defaultValue={selectedTask.flag_comment ?? ''}
+                          placeholder="Why was this task flagged?"
+                          className="text-sm resize-none border-red-100 bg-red-50 focus-visible:ring-red-300"
+                          rows={3}
+                          onBlur={e => {
+                            const newComment = e.target.value.trim();
+                            if (newComment !== (selectedTask.flag_comment ?? '')) {
+                              onTaskFlag?.(selectedTask.id, true, newComment);
+                            }
+                          }}
+                        />
+                        <p className="text-xs text-slate-400 mt-1">Changes save on blur</p>
                       </div>
                     )}
                   </div>

@@ -98,9 +98,25 @@ function mapEmployee(ke: any) {
   })();
 
   const status = (() => {
+    // Primary signal: employmentStatus from Keka — most reliable field
     const raw = ke.employmentStatus ?? ke.accountStatus ?? ke.status ?? '';
-    const s = (typeof raw === 'string' ? raw : extractString(raw, 'title', 'name') ?? '').toLowerCase();
-    if (s.includes('inactive') || s.includes('terminated') || s.includes('resigned') || s.includes('exit')) return 'inactive';
+    const s = (typeof raw === 'string' ? raw : extractString(raw, 'title', 'name') ?? '').toLowerCase().trim();
+
+    // Explicit inactive keywords in the status string
+    const INACTIVE_KEYWORDS = ['inactive', 'terminated', 'exit', 'separated', 'offboarded', 'relieved', 'absconded'];
+    if (INACTIVE_KEYWORDS.some(k => s.includes(k))) return 'inactive';
+
+    // If employmentStatus is clearly active, trust it
+    const ACTIVE_KEYWORDS = ['active', 'working', 'employed', 'permanent', 'confirmed', 'probation', 'intern', 'contract', 'consultant', 'notice', 'resigned'];
+    if (ACTIVE_KEYWORDS.some(k => s.includes(k))) return 'active';
+
+    // Secondary signal: exitDate in the past means they've actually left
+    if (ke.exitDate) {
+      const exitDate = new Date(ke.exitDate);
+      if (!isNaN(exitDate.getTime()) && exitDate < new Date()) return 'inactive';
+    }
+
+    // Unknown/empty — default to active so nobody gets incorrectly deactivated
     return 'active';
   })();
 

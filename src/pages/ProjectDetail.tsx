@@ -10,6 +10,7 @@ import { ResourceOverview } from '@/components/ResourceOverview';
 import { IssuesTracker } from '@/components/IssuesTracker';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useProjects } from '@/hooks/useProjects';
+import { useAllocations } from '@/hooks/useAllocations';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,7 @@ const ProjectDetail = () => {
   const { toast } = useToast();
 
   const { projects, deliverables, issues, loading, refetch } = useProjects();
+  const { getProjectAllocations } = useAllocations();
 
   const [activeTab, setActiveTab] = useState('project');
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -57,11 +59,19 @@ const ProjectDetail = () => {
     if (!raw) return null;
 
     const projectDeliverables = deliverables.filter(d => d.project_id === raw.id);
-    const completed = projectDeliverables.filter(d => ['completed', 'done', 'green'].includes(d.status?.toLowerCase() ?? '')).length;
-    const blockers = issues.filter(
-      i => i.project_id === raw.id && i.status === 'unresolved'
-    ).length;
-    const teamSize = new Set(projectDeliverables.map(d => d.assignee_name).filter(Boolean)).size;
+    const st = (d: any) => d.status?.toLowerCase() ?? '';
+    const completed = projectDeliverables.filter(d => ['completed', 'done', 'green'].includes(st(d))).length;
+    const blockers = issues.filter(i => i.project_id === raw.id && i.status === 'unresolved').length;
+    const teamSize = getProjectAllocations(raw.id).length;
+
+    const deliverablesByStatus = {
+      green:          projectDeliverables.filter(d => st(d) === 'green').length,
+      amber:          projectDeliverables.filter(d => st(d) === 'amber').length,
+      red:            projectDeliverables.filter(d => st(d) === 'red').length,
+      'not-started':  projectDeliverables.filter(d => ['not-started', 'pending'].includes(st(d))).length,
+      done:           projectDeliverables.filter(d => ['done', 'completed'].includes(st(d))).length,
+      'de-committed': projectDeliverables.filter(d => st(d) === 'de-committed').length,
+    };
 
     return {
       id: raw.id,
@@ -74,6 +84,7 @@ const ProjectDetail = () => {
       lead: raw.manager?.full_name ?? 'Unassigned',
       deliverables: projectDeliverables.length,
       completedDeliverables: completed,
+      deliverablesByStatus,
       blockers,
       teamSize,
       hoursAllocated: 0,
@@ -90,9 +101,10 @@ const ProjectDetail = () => {
         type: d.type ?? 'new-feature',
         assignee: d.assignee_name ?? 'Unassigned',
         department: raw.manager?.department ?? 'Unknown',
-        status: (DELIVERABLE_STATUS_PASS_THROUGH.has(d.status?.toLowerCase() ?? '') ? d.status?.toLowerCase() : STATUS_MAP[d.status?.toLowerCase()]) ?? 'not-started',
+        status: (DELIVERABLE_STATUS_PASS_THROUGH.has(st(d)) ? st(d) : STATUS_MAP[st(d)]) ?? 'not-started',
         comments: d.description ?? '',
         flagged: (d as any).flagged ?? false,
+        flag_comment: (d as any).flag_comment ?? '',
       })),
       pastWeeksStatus: weeklyStatuses.map(ws => ({
         week: ws.week,
@@ -132,8 +144,12 @@ const ProjectDetail = () => {
     }
   };
 
-  const handleTaskFlag = async (taskId: string, flagged: boolean) => {
-    const { error } = await supabase.rpc('set_deliverable_flagged', { p_id: taskId, p_flagged: flagged });
+  const handleTaskFlag = async (taskId: string, flagged: boolean, comment?: string) => {
+    const { error } = await supabase.rpc('set_deliverable_flagged', {
+      p_id: taskId,
+      p_flagged: flagged,
+      p_comment: comment ?? null,
+    });
     if (error) {
       toast({ title: "Error", description: "Failed to update flag.", variant: "destructive" });
     } else {
@@ -228,6 +244,7 @@ const ProjectDetail = () => {
             lead: project.lead,
             deliverables: project.deliverables,
             completedDeliverables: project.completedDeliverables,
+            deliverablesByStatus: project.deliverablesByStatus,
             blockers: project.blockers,
             teamSize: project.teamSize,
             hoursAllocated: project.hoursAllocated,
